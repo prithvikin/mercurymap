@@ -1,4 +1,4 @@
-# Photo Map - Supabase + Vercel Version
+# photoLog - Log your travels with photos
 
 A modern photo map application built with React, Supabase, and Vercel.
 
