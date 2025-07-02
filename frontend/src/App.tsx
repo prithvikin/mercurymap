@@ -6,12 +6,6 @@ import Home from './pages/Home.tsx';
 import PhotoUpload from './pages/PhotoUpload.tsx';
 
 function App() {
-  console.log('App component loading...');
-  console.log('Environment variables:', {
-    supabaseUrl: process.env.REACT_APP_SUPABASE_URL,
-    hasAnonKey: !!process.env.REACT_APP_SUPABASE_ANON_KEY
-  });
-  
   return (
     <AuthProvider>
       <div className="min-h-screen bg-gray-50">
