@@ -2,8 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, MapPin, Calendar, FileImage } from 'lucide-react';
-import { photoService } from '../services/photoService';
-import { useAuth } from '../contexts/AuthContext';
+import { photoService } from '../services/photoService.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import toast from 'react-hot-toast';
 
 const PhotoUpload: React.FC = () => {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { photoService } from '../services/photoService';
-import { Photo } from '../lib/supabase';
+import { photoService } from '../services/photoService.ts';
+import { Photo } from '../lib/supabase.ts';
 import { Camera, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 

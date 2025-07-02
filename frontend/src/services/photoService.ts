@@ -1,4 +1,4 @@
-import { supabase, Photo } from '../lib/supabase';
+import { supabase, Photo } from '../lib/supabase.ts';
 
 export const photoService = {
   // Get all photos
