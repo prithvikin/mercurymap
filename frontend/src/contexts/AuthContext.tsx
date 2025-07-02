@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signUp = async (email: string, password: string, username: string) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -65,9 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) throw error;
 
-      if (data.user) {
-        toast.success('Registration successful! Please check your email to verify your account.');
-      }
+      toast.success('Registration successful! Please check your email to verify your account.');
     } catch (error: any) {
       toast.error(error.message || 'Registration failed');
       throw error;
