@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { X, FileImage } from 'lucide-react';
 import { photoService } from '../services/photoService.ts';
-import { useAuth } from '../contexts/AuthContext.tsx';
 import toast from 'react-hot-toast';
 
 const PhotoUpload: React.FC = () => {
@@ -19,7 +18,6 @@ const PhotoUpload: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -55,11 +53,6 @@ const PhotoUpload: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
-      toast.error('Please log in to upload photos');
-      return;
-    }
 
     if (!selectedFile) {
       toast.error('Please select a photo to upload');
@@ -97,25 +90,6 @@ const PhotoUpload: React.FC = () => {
       setLoading(false);
     }
   };
-
-  if (!user) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Login Required</h1>
-          <p className="text-gray-600 mb-4">
-            You need to be logged in to upload photos.
-          </p>
-          <button
-            onClick={() => navigate('/login')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-2xl mx-auto">

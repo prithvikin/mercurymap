@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL!
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY!
-
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL!;
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY!;
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Database types
@@ -16,15 +15,8 @@ export interface Photo {
   taken_date: string | null
   file_path: string
   file_url: string
-  user_id: string
   created_at: string
   updated_at: string
 }
 
-export interface User {
-  id: string
-  email: string
-  user_metadata: {
-    username?: string
-  }
-} 
+ 

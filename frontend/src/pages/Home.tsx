@@ -3,12 +3,14 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import { photoService } from '../services/photoService.ts';
 import { Photo } from '../lib/supabase.ts';
-import { Camera, MapPin } from 'lucide-react';
+import { Camera, MapPin, Upload, Home as HomeIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 const Home: React.FC = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPhotos();
@@ -19,7 +21,7 @@ const Home: React.FC = () => {
       const data = await photoService.getAllPhotos();
       setPhotos(data);
     } catch (error) {
-      console.error('Error fetching photos:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
       toast.error('Failed to load photos');
     } finally {
       setLoading(false);
@@ -44,18 +46,44 @@ const Home: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Navigation Header */}
+      <div className="bg-white rounded-lg shadow-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <HomeIcon className="h-6 w-6 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">PhotoLog</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link
+              to="/upload"
+              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Upload Photo</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
           Explore Photos Around the World
-        </h1>
+        </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Click on the map markers to view photos taken in different countries. 
           Share your own travel memories by uploading photos to the map.
         </p>
       </div>
 
+      {/* Error display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="h-96 md:h-[600px] relative">
+        <div style={{ height: '400px', position: 'relative' }}>
           <MapContainer
             center={[20, 0]}
             zoom={2}
@@ -132,6 +160,13 @@ const Home: React.FC = () => {
           <p className="text-gray-600 mb-4">
             Be the first to share your travel photos on the map!
           </p>
+          <Link
+            to="/upload"
+            className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <Upload className="h-4 w-4" />
+            <span>Upload Your First Photo</span>
+          </Link>
         </div>
       )}
     </div>

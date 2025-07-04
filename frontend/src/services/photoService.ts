@@ -46,9 +46,6 @@ export const photoService = {
     longitude: number | null,
     takenDate: string | null
   ): Promise<Photo> {
-    const user = supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
     // Upload file to Supabase Storage
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}.${fileExt}`;
