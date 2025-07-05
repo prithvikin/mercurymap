@@ -14,12 +14,20 @@ const Home: React.FC = () => {
   const [popupInfo, setPopupInfo] = useState<Photo | null>(null);
   const mapRef = useRef<any>(null);
 
-  // Mapbox viewport state
-  const [viewState, setViewState] = useState({
+  // Initial map state for reset functionality
+  const initialViewState = {
     longitude: 0,
     latitude: 20,
     zoom: 1.25
-  });
+  };
+
+  // Mapbox viewport state
+  const [viewState, setViewState] = useState(initialViewState);
+
+  const handleResetMap = () => {
+    setViewState(initialViewState);
+    toast.success('Map reset to world view');
+  };
 
   const handleLocationSearch = (location: { 
     lat: number; 
@@ -119,6 +127,20 @@ const Home: React.FC = () => {
           {/* Map Search Overlay */}
           <div className="absolute top-4 left-4 z-10">
             <MapSearch onLocationSelect={handleLocationSearch} />
+          </div>
+          
+          {/* Reset Button */}
+          <div className="absolute top-4 right-4 z-10">
+            <button
+              onClick={handleResetMap}
+              className="bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-md shadow-md border border-gray-300 transition-colors flex items-center space-x-2"
+              title="Reset map to world view"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Reset</span>
+            </button>
           </div>
           
           <Map
