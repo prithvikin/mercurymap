@@ -115,7 +115,7 @@ const Home: React.FC = () => {
       )}
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div style={{ height: '400px', position: 'relative' }}>
+        <div style={{ height: '600px', position: 'relative' }}>
           {/* Map Search Overlay */}
           <div className="absolute top-4 left-4 z-10">
             <MapSearch onLocationSelect={handleLocationSearch} />
