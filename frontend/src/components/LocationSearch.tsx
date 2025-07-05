@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Autocomplete from 'react-autocomplete';
 
 interface Location {
   formatted: string;
@@ -81,55 +80,82 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
     setSuggestions([]);
   };
 
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => 
+        prev < suggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault();
+      handleSelect(suggestions[highlightedIndex]);
+    } else if (e.key === 'Escape') {
+      setSuggestions([]);
+      setHighlightedIndex(-1);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    setHighlightedIndex(-1);
+  };
+
+  const handleSuggestionClick = (location: Location) => {
+    handleSelect(location);
+  };
+
   return (
     <div className="relative">
-      <Autocomplete
+      <input
+        ref={inputRef}
+        type="text"
         value={value}
-        items={suggestions}
-        getItemValue={(item) => item.formatted}
-        onChange={(e) => setValue(e.target.value)}
-        onSelect={(val, item) => handleSelect(item)}
-        renderItem={(item, isHighlighted) => (
-          <div
-            key={item.formatted}
-            className={`p-2 cursor-pointer ${
-              isHighlighted ? 'bg-blue-100' : 'bg-white'
-            } hover:bg-gray-50 border-b border-gray-200`}
-          >
-            <div className="font-medium">{item.formatted}</div>
-            <div className="text-sm text-gray-500">
-              {item.components.city && item.components.country 
-                ? `${item.components.city}, ${item.components.country}`
-                : item.formatted
-              }
-            </div>
-          </div>
-        )}
-        renderInput={(props) => (
-          <input
-            {...props}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder={placeholder}
-          />
-        )}
-        wrapperStyle={{
-          display: 'block',
-          position: 'relative'
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onFocus={() => {
+          if (suggestions.length > 0) {
+            setHighlightedIndex(-1);
+          }
         }}
-        menuStyle={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          backgroundColor: 'white',
-          border: '1px solid #e5e7eb',
-          borderRadius: '0.375rem',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-          maxHeight: '200px',
-          overflow: 'auto'
+        onBlur={() => {
+          // Delay hiding suggestions to allow for clicks
+          setTimeout(() => {
+            setSuggestions([]);
+            setHighlightedIndex(-1);
+          }, 200);
         }}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder={placeholder}
       />
+      
+      {suggestions.length > 0 && (
+        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-auto">
+          {suggestions.map((item, index) => (
+            <div
+              key={item.formatted}
+              className={`p-2 cursor-pointer ${
+                index === highlightedIndex ? 'bg-blue-100' : 'bg-white'
+              } hover:bg-gray-50 border-b border-gray-200 last:border-b-0`}
+              onClick={() => handleSuggestionClick(item)}
+            >
+              <div className="font-medium">{item.formatted}</div>
+              <div className="text-sm text-gray-500">
+                {item.components.city && item.components.country 
+                  ? `${item.components.city}, ${item.components.country}`
+                  : item.formatted
+                }
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
       {loading && (
         <div className="absolute right-3 top-2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
