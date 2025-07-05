@@ -49,4 +49,94 @@ code {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Photo Carousel Styles */
+.photo-carousel-popup {
+  min-width: 280px;
+  max-width: 350px;
+  overflow: hidden;
+  max-height: 400px;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.single-photo-popup {
+  min-width: 400px;
+  max-width: 600px;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.photo-slider .slick-prev,
+.photo-slider .slick-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.photo-slider .slick-prev:hover,
+.photo-slider .slick-next:hover {
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.photo-slider .slick-prev {
+  left: -16px;
+}
+
+.photo-slider .slick-next {
+  right: -16px;
+}
+
+.photo-slider .slick-dots {
+  bottom: -25px;
+}
+
+.photo-slider .slick-dots li button:before {
+  color: #6b7280;
+}
+
+.photo-slider .slick-dots li.slick-active button:before {
+  color: #3b82f6;
+}
+
+.photo-slide {
+  padding: 0 4px;
+}
+
+.photo-slide img {
+  max-width: 100%;
+  max-height: 160px;
+  width: 100%;
+  height: auto; /* Let height adjust naturally based on aspect ratio */
+  object-fit: cover;
+  border-radius: 0.375rem;
+}
+
+/* Keep Mapbox popup, style our content to fit */
+.mapboxgl-popup-content {
+  padding: 0 !important;  /* Remove default padding */
+  min-width: 280px;
+  max-width: 450px;
+}
+
+/* Hide default close button since we have our own */
+.mapboxgl-popup-close-button {
+  display: none;
 } 

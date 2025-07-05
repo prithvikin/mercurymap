@@ -6,12 +6,13 @@ import { Camera, MapPin, Upload, Home as HomeIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
+import PhotoCarousel from '../components/PhotoCarousel.tsx';
 
 const Home: React.FC = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [popupInfo, setPopupInfo] = useState<Photo | null>(null);
+  const [popupInfo, setPopupInfo] = useState<Photo[] | null>(null);
   const mapRef = useRef<any>(null);
 
   // Initial map state for reset functionality
@@ -74,6 +75,20 @@ const Home: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Group photos by location (same lat/lng)
+  const groupedPhotos = photos.reduce((groups, photo) => {
+    const key = `${photo.latitude?.toFixed(4)}_${photo.longitude?.toFixed(4)}`;
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(photo);
+    return groups;
+  }, {} as Record<string, Photo[]>);
+
+  const handleMarkerClick = (photos: Photo[]) => {
+    setPopupInfo(photos);
   };
 
   if (loading) {
@@ -151,44 +166,41 @@ const Home: React.FC = () => {
             mapStyle="mapbox://styles/mapbox/streets-v11"
             mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
           >
-            {photos.map((photo) => (
-              <Marker
-                key={photo.id}
-                longitude={photo.longitude || 0}
-                latitude={photo.latitude || 0}
-                anchor="bottom"
-                onClick={e => {
-                  e.originalEvent.stopPropagation();
-                  setPopupInfo(photo);
-                }}
-              >
-                <div className="w-6 h-6 bg-blue-600 rounded-full border-2 border-white cursor-pointer"></div>
-              </Marker>
-            ))}
+            {Object.entries(groupedPhotos).map(([key, photoGroup]) => {
+              const firstPhoto = photoGroup[0];
+              const isMultiple = photoGroup.length > 1;
+              
+              return (
+                <Marker
+                  key={key}
+                  longitude={firstPhoto.longitude || 0}
+                  latitude={firstPhoto.latitude || 0}
+                  anchor="bottom"
+                  onClick={e => {
+                    e.originalEvent.stopPropagation();
+                    handleMarkerClick(photoGroup);
+                  }}
+                >
+                  <div className={`${isMultiple ? 'w-8 h-8' : 'w-6 h-6'} bg-blue-600 rounded-full border-2 border-white cursor-pointer flex items-center justify-center text-white text-xs font-bold`}>
+                    {isMultiple ? photoGroup.length : ''}
+                  </div>
+                </Marker>
+              );
+            })}
 
             {popupInfo && (
               <Popup
                 anchor="top"
-                longitude={popupInfo.longitude || 0}
-                latitude={popupInfo.latitude || 0}
+                longitude={popupInfo[0].longitude || 0}
+                latitude={popupInfo[0].latitude || 0}
                 onClose={() => setPopupInfo(null)}
                 closeOnClick={false}
+                maxWidth="none"
               >
-                <div className="photo-popup">
-                  <img
-                    src={popupInfo.file_url}
-                    alt={popupInfo.title || 'Photo'}
-                    className="w-full h-32 object-cover rounded mb-2"
-                  />
-                  <h3 className="font-semibold text-sm mb-1">{popupInfo.title}</h3>
-                  <p className="text-xs text-gray-600 mb-1">{popupInfo.country}</p>
-                  {popupInfo.description && (
-                    <p className="text-xs text-gray-500">{popupInfo.description}</p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(popupInfo.created_at).toLocaleDateString()}
-                  </p>
-                </div>
+                <PhotoCarousel 
+                  photos={popupInfo} 
+                  onClose={() => setPopupInfo(null)} 
+                />
               </Popup>
             )}
           </Map>
