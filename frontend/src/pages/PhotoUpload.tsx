@@ -4,16 +4,22 @@ import { useDropzone } from 'react-dropzone';
 import { X, FileImage } from 'lucide-react';
 import { photoService } from '../services/photoService.ts';
 import toast from 'react-hot-toast';
+import LocationSearch from '../components/LocationSearch.tsx';
 
 const PhotoUpload: React.FC = () => {
   const [formData, setFormData] = useState({
-    title: '',
     description: '',
     country: '',
     latitude: '',
     longitude: '',
     taken_date: ''
   });
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+    city: string;
+    country: string;
+  } | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,13 +65,8 @@ const PhotoUpload: React.FC = () => {
       return;
     }
 
-    if (!formData.title.trim()) {
-      toast.error('Please enter a title for your photo');
-      return;
-    }
-
-    if (!formData.country.trim()) {
-      toast.error('Please enter the country where the photo was taken');
+    if (!selectedLocation) {
+      toast.error('Please select a location for your photo');
       return;
     }
 
@@ -74,11 +75,11 @@ const PhotoUpload: React.FC = () => {
     try {
       await photoService.uploadPhoto(
         selectedFile,
-        formData.title,
+        selectedLocation.city || 'Untitled', // Use city as title fallback
         formData.description,
-        formData.country,
-        formData.latitude ? parseFloat(formData.latitude) : null,
-        formData.longitude ? parseFloat(formData.longitude) : null,
+        selectedLocation.country,
+        selectedLocation.lat,
+        selectedLocation.lng,
         formData.taken_date || null
       );
 
@@ -135,21 +136,6 @@ const PhotoUpload: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-              Title
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Enter photo title"
-            />
-          </div>
-
-          <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700">
               Description
             </label>
@@ -165,51 +151,31 @@ const PhotoUpload: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-              Country
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+              Location
             </label>
-            <input
-              type="text"
-              id="country"
-              name="country"
-              value={formData.country}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Enter country name"
+            <LocationSearch
+              onLocationSelect={(location) => {
+                setSelectedLocation(location);
+                setFormData(prev => ({
+                  ...prev,
+                  country: location.country,
+                  latitude: location.lat.toString(),
+                  longitude: location.lng.toString()
+                }));
+              }}
+              placeholder="Search for a city or country..."
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="latitude" className="block text-sm font-medium text-gray-700">
-                Latitude
-              </label>
-              <input
-                type="number"
-                id="latitude"
-                name="latitude"
-                value={formData.latitude}
-                onChange={handleChange}
-                step="any"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="e.g., 40.7128"
-              />
-            </div>
-            <div>
-              <label htmlFor="longitude" className="block text-sm font-medium text-gray-700">
-                Longitude
-              </label>
-              <input
-                type="number"
-                id="longitude"
-                name="longitude"
-                value={formData.longitude}
-                onChange={handleChange}
-                step="any"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="e.g., -74.0060"
-              />
-            </div>
+            {selectedLocation && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-800">
+                  Selected: {selectedLocation.city}, {selectedLocation.country}
+                </p>
+                <p className="text-xs text-green-600">
+                  Coordinates: {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)}
+                </p>
+              </div>
+            )}
           </div>
 
           <div>

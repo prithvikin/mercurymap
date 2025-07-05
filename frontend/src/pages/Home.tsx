@@ -1,16 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Icon } from 'leaflet';
+import React, { useState, useEffect, useRef } from 'react';
+import Map, { Marker, Popup } from 'react-map-gl';
 import { photoService } from '../services/photoService.ts';
 import { Photo } from '../lib/supabase.ts';
 import { Camera, MapPin, Upload, Home as HomeIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
+import MapSearch from '../components/MapSearch.tsx';
 
 const Home: React.FC = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [popupInfo, setPopupInfo] = useState<Photo | null>(null);
+  const mapRef = useRef<any>(null);
+
+  // Mapbox viewport state
+  const [viewState, setViewState] = useState({
+    longitude: 0,
+    latitude: 20,
+    zoom: 1.25
+  });
+
+  const handleLocationSearch = (location: { 
+    lat: number; 
+    lng: number; 
+    name: string;
+    bbox?: number[];
+  }) => {
+    if (location.bbox && mapRef.current) {
+      // Use bounding box to fit the entire area
+      const [minLng, minLat, maxLng, maxLat] = location.bbox;
+      mapRef.current.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat]
+        ],
+        {
+          padding: 50,
+          duration: 1000
+        }
+      );
+    } else {
+      // Fallback to center point with zoom
+      setViewState({
+        longitude: location.lng,
+        latitude: location.lat,
+        zoom: 8
+      });
+    }
+    
+    toast.success(`Zoomed to ${location.name}`);
+  };
 
   useEffect(() => {
     fetchPhotos();
@@ -27,14 +67,6 @@ const Home: React.FC = () => {
       setLoading(false);
     }
   };
-
-  // Custom marker icon
-  const customIcon = new Icon({
-    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyQzIgMTcuNTIgNi40OCAyMiAxMiAyMkMxNy41MiAyMiAyMiAxNy41MiAyMiAxMkMyMiA2LjQ4IDE3LjUyIDIgMTIgMloiIGZpbGw9IiMzQjgyRjYiLz4KPHBhdGggZD0iTTEyIDZDNi40OCA2IDIgMTAuNDggMiAxNkMyIDIxLjUyIDYuNDggMjYgMTIgMjZDMjEuNTIgMjYgMjYgMjEuNTIgMjYgMTZDMjYgMTAuNDggMjEuNTIgNiAxMiA2WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTEyIDEwQzEwLjM0IDEwIDkgMTEuMzQgOSAxM0M5IDE0LjY2IDEwLjM0IDE2IDEyIDE2QzEzLjY2IDE2IDE1IDE0LjY2IDE1IDEzQzE1IDExLjM0IDEzLjY2IDEwIDEyIDEwWiIgZmlsbD0iIzNCODJGNiIvPgo8L3N2Zz4K',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-  });
 
   if (loading) {
     return (
@@ -84,43 +116,60 @@ const Home: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div style={{ height: '400px', position: 'relative' }}>
-          <MapContainer
-            center={[20, 0]}
-            zoom={2}
-            style={{ height: '100%', width: '100%' }}
-            className="z-10"
+          {/* Map Search Overlay */}
+          <div className="absolute top-4 left-4 z-10">
+            <MapSearch onLocationSelect={handleLocationSearch} />
+          </div>
+          
+          <Map
+            ref={mapRef}
+            {...viewState}
+            onMove={evt => setViewState(evt.viewState)}
+            style={{ width: '100%', height: '100%' }}
+            mapStyle="mapbox://styles/mapbox/streets-v11"
+            mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
           >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            
             {photos.map((photo) => (
               <Marker
                 key={photo.id}
-                position={[photo.latitude || 0, photo.longitude || 0]}
-                icon={customIcon}
+                longitude={photo.longitude || 0}
+                latitude={photo.latitude || 0}
+                anchor="bottom"
+                onClick={e => {
+                  e.originalEvent.stopPropagation();
+                  setPopupInfo(photo);
+                }}
               >
-                <Popup>
-                  <div className="photo-popup">
-                    <img
-                      src={photo.file_url}
-                      alt={photo.title}
-                      className="w-full h-32 object-cover rounded mb-2"
-                    />
-                    <h3 className="font-semibold text-sm mb-1">{photo.title}</h3>
-                    <p className="text-xs text-gray-600 mb-1">{photo.country}</p>
-                    {photo.description && (
-                      <p className="text-xs text-gray-500">{photo.description}</p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(photo.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </Popup>
+                <div className="w-6 h-6 bg-blue-600 rounded-full border-2 border-white cursor-pointer"></div>
               </Marker>
             ))}
-          </MapContainer>
+
+            {popupInfo && (
+              <Popup
+                anchor="top"
+                longitude={popupInfo.longitude || 0}
+                latitude={popupInfo.latitude || 0}
+                onClose={() => setPopupInfo(null)}
+                closeOnClick={false}
+              >
+                <div className="photo-popup">
+                  <img
+                    src={popupInfo.file_url}
+                    alt={popupInfo.title || 'Photo'}
+                    className="w-full h-32 object-cover rounded mb-2"
+                  />
+                  <h3 className="font-semibold text-sm mb-1">{popupInfo.title}</h3>
+                  <p className="text-xs text-gray-600 mb-1">{popupInfo.country}</p>
+                  {popupInfo.description && (
+                    <p className="text-xs text-gray-500">{popupInfo.description}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(popupInfo.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </Popup>
+            )}
+          </Map>
         </div>
       </div>
 
