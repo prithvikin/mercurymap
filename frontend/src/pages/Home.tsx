@@ -6,12 +6,13 @@ import { Camera, MapPin, Upload, Home as HomeIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
+import PhotoCarousel from '../components/PhotoCarousel.tsx';
 
 const Home: React.FC = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [popupInfo, setPopupInfo] = useState<Photo | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Photo[] | null>(null);
   const mapRef = useRef<any>(null);
 
   // Initial map state for reset functionality
@@ -76,6 +77,20 @@ const Home: React.FC = () => {
     }
   };
 
+  // Group photos by location (same lat/lng)
+  const groupedPhotos = photos.reduce((groups, photo) => {
+    const key = `${photo.latitude?.toFixed(4)}_${photo.longitude?.toFixed(4)}`;
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(photo);
+    return groups;
+  }, {} as Record<string, Photo[]>);
+
+  const handleMarkerClick = (photos: Photo[]) => {
+    setSelectedLocation(photos);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -123,75 +138,103 @@ const Home: React.FC = () => {
       )}
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div style={{ height: '600px', position: 'relative' }}>
-          {/* Map Search Overlay */}
-          <div className="absolute top-4 left-4 z-10">
-            <MapSearch onLocationSelect={handleLocationSearch} />
-          </div>
-          
-          {/* Reset Button */}
-          <div className="absolute top-4 right-4 z-10">
-            <button
-              onClick={handleResetMap}
-              className="bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-md shadow-md border border-gray-300 transition-colors flex items-center space-x-2"
-              title="Reset map to world view"
+        <div className="flex" style={{ height: '600px' }}>
+          {/* Map Container - 75% width when sidebar is open, 100% when closed */}
+          <div className={`${selectedLocation ? 'w-3/4' : 'w-full'} relative transition-all duration-300`}>
+            {/* Map Search Overlay */}
+            <div className="absolute top-4 left-4 z-10">
+              <MapSearch onLocationSelect={handleLocationSearch} />
+            </div>
+            
+            {/* Reset Button */}
+            <div className="absolute top-4 right-4 z-10">
+              <button
+                onClick={handleResetMap}
+                className="bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-md shadow-md border border-gray-300 transition-colors flex items-center space-x-2"
+                title="Reset map to world view"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Reset</span>
+              </button>
+            </div>
+            
+            <Map
+              ref={mapRef}
+              {...viewState}
+              onMove={evt => setViewState(evt.viewState)}
+              style={{ width: '100%', height: '100%' }}
+              mapStyle="mapbox://styles/mapbox/streets-v11"
+              mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span>Reset</span>
-            </button>
+              {Object.entries(groupedPhotos).map(([key, photoGroup]) => {
+                const firstPhoto = photoGroup[0];
+                const isMultiple = photoGroup.length > 1;
+                
+                return (
+                  <Marker
+                    key={key}
+                    longitude={firstPhoto.longitude || 0}
+                    latitude={firstPhoto.latitude || 0}
+                    anchor="bottom"
+                    onClick={e => {
+                      e.originalEvent.stopPropagation();
+                      handleMarkerClick(photoGroup);
+                    }}
+                  >
+                    <div className={`${isMultiple ? 'w-8 h-8' : 'w-6 h-6'} bg-blue-600 rounded-full border-2 border-white cursor-pointer flex items-center justify-center text-white text-xs font-bold`}>
+                      {isMultiple ? photoGroup.length : ''}
+                    </div>
+                  </Marker>
+                );
+              })}
+            </Map>
           </div>
-          
-          <Map
-            ref={mapRef}
-            {...viewState}
-            onMove={evt => setViewState(evt.viewState)}
-            style={{ width: '100%', height: '100%' }}
-            mapStyle="mapbox://styles/mapbox/streets-v11"
-            mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
-          >
-            {photos.map((photo) => (
-              <Marker
-                key={photo.id}
-                longitude={photo.longitude || 0}
-                latitude={photo.latitude || 0}
-                anchor="bottom"
-                onClick={e => {
-                  e.originalEvent.stopPropagation();
-                  setPopupInfo(photo);
-                }}
-              >
-                <div className="w-6 h-6 bg-blue-600 rounded-full border-2 border-white cursor-pointer"></div>
-              </Marker>
-            ))}
 
-            {popupInfo && (
-              <Popup
-                anchor="top"
-                longitude={popupInfo.longitude || 0}
-                latitude={popupInfo.latitude || 0}
-                onClose={() => setPopupInfo(null)}
-                closeOnClick={false}
-              >
-                <div className="photo-popup">
-                  <img
-                    src={popupInfo.file_url}
-                    alt={popupInfo.title || 'Photo'}
-                    className="w-full h-32 object-cover rounded mb-2"
-                  />
-                  <h3 className="font-semibold text-sm mb-1">{popupInfo.title}</h3>
-                  <p className="text-xs text-gray-600 mb-1">{popupInfo.country}</p>
-                  {popupInfo.description && (
-                    <p className="text-xs text-gray-500">{popupInfo.description}</p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(popupInfo.created_at).toLocaleDateString()}
-                  </p>
+          {/* Sidebar - 25% width when open */}
+          {selectedLocation && (
+            <div className="w-1/4 bg-white border-l border-gray-200 overflow-y-auto">
+              <div className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedLocation.length} Photo{selectedLocation.length > 1 ? 's' : ''} at this location
+                  </h3>
+                  <button
+                    onClick={() => setSelectedLocation(null)}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    ✕
+                  </button>
                 </div>
-              </Popup>
-            )}
-          </Map>
+                
+                {/* Photo Display */}
+                <div className="space-y-4">
+                  {selectedLocation.map((photo, index) => (
+                    <div key={photo.id} className="bg-gray-50 rounded-lg p-3">
+                      <img
+                        src={photo.file_url}
+                        alt={photo.title || 'Photo'}
+                        className="w-full h-48 object-cover rounded mb-3"
+                      />
+                      <div className="space-y-2">
+                        {photo.title && (
+                          <h4 className="font-semibold text-sm">{photo.title}</h4>
+                        )}
+                        <p className="text-xs text-gray-600">{photo.country}</p>
+                        {photo.description && (
+                          <p className="text-xs text-gray-500">{photo.description}</p>
+                        )}
+                        <p className="text-xs text-gray-400">
+                          {new Date(photo.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
