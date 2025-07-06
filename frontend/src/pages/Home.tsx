@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Map, { Marker, Popup } from 'react-map-gl';
+import Map, { Marker } from 'react-map-gl';
 import { photoService } from '../services/photoService.ts';
 import { Photo } from '../lib/supabase.ts';
 import { Camera, MapPin, Upload, Home as HomeIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
-import PhotoCarousel from '../components/PhotoCarousel.tsx';
 
 const Home: React.FC = () => {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Photo[] | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const mapRef = useRef<any>(null);
 
   // Initial map state for reset functionality
@@ -89,6 +90,32 @@ const Home: React.FC = () => {
 
   const handleMarkerClick = (photos: Photo[]) => {
     setSelectedLocation(photos);
+  };
+
+  const handlePhotoClick = (index: number) => {
+    setCurrentPhotoIndex(index);
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setCurrentPhotoIndex(0);
+  };
+
+  const handleNextPhoto = () => {
+    if (selectedLocation) {
+      setCurrentPhotoIndex((prev) => 
+        prev === selectedLocation.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const handlePrevPhoto = () => {
+    if (selectedLocation) {
+      setCurrentPhotoIndex((prev) => 
+        prev === 0 ? selectedLocation.length - 1 : prev - 1
+      );
+    }
   };
 
   if (loading) {
@@ -212,11 +239,15 @@ const Home: React.FC = () => {
                 <div className="space-y-4">
                   {selectedLocation.map((photo, index) => (
                     <div key={photo.id} className="bg-gray-50 rounded-lg p-3">
-                      <img
-                        src={photo.file_url}
-                        alt={photo.title || 'Photo'}
-                        className="w-full h-48 object-cover rounded mb-3"
-                      />
+                      <div className="relative">
+                        <img
+                          src={photo.file_url}
+                          alt={photo.title || 'Photo'}
+                          className="w-full h-48 object-cover rounded mb-3 cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => handlePhotoClick(index)}
+                        />
+
+                      </div>
                       <div className="space-y-2">
                         {photo.title && (
                           <h4 className="font-semibold text-sm">{photo.title}</h4>
@@ -246,11 +277,14 @@ const Home: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {photos.slice(0, 6).map((photo) => (
               <div key={photo.id} className="bg-gray-50 rounded-lg overflow-hidden">
-                <img
-                  src={photo.file_url}
-                  alt={photo.title}
-                  className="w-full h-48 object-cover"
-                />
+                <div className="relative">
+                  <img
+                    src={photo.file_url}
+                    alt={photo.title}
+                    className="w-full h-48 object-cover"
+                  />
+
+                </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 mb-1">{photo.title}</h3>
                   <div className="flex items-center text-sm text-gray-600 mb-2">
@@ -281,6 +315,90 @@ const Home: React.FC = () => {
             <Upload className="h-4 w-4" />
             <span>Upload Your First Photo</span>
           </Link>
+        </div>
+      )}
+
+      {/* Fullscreen Modal */}
+      {modalOpen && selectedLocation && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[9999]"
+          style={{
+            margin: 0,
+            padding: 0,
+            width: '100vw',
+            height: '100vh',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Close Button */}
+          <button
+            onClick={handleModalClose}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Navigation Arrows */}
+          {selectedLocation.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevPhoto}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={handleNextPhoto}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+
+          {/* Photo Display */}
+          <div className="relative w-full h-full flex items-center justify-center p-8">
+            <img
+              src={selectedLocation[currentPhotoIndex].file_url}
+              alt={selectedLocation[currentPhotoIndex].title || 'Photo'}
+              className="max-w-[90vw] max-h-[80vh] object-contain"
+            />
+            
+            {/* Photo Info */}
+            <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-50 text-white p-4 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  {selectedLocation[currentPhotoIndex].title && (
+                    <h3 className="text-lg font-semibold mb-1">
+                      {selectedLocation[currentPhotoIndex].title}
+                    </h3>
+                  )}
+                  <p className="text-sm text-gray-300 mb-1">
+                    {selectedLocation[currentPhotoIndex].country}
+                  </p>
+                  {selectedLocation[currentPhotoIndex].description && (
+                    <p className="text-sm text-gray-300 mb-1">
+                      {selectedLocation[currentPhotoIndex].description}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400">
+                    {new Date(selectedLocation[currentPhotoIndex].created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                {selectedLocation.length > 1 && (
+                  <div className="text-sm text-gray-300">
+                    {currentPhotoIndex + 1} / {selectedLocation.length}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
