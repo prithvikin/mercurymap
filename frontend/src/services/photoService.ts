@@ -82,27 +82,7 @@ export const photoService = {
     return photoData;
   },
 
-  // Delete photo
-  async deletePhoto(id: string): Promise<void> {
-    // Get photo to get file path
-    const photo = await this.getPhotoById(id);
-    if (!photo) throw new Error('Photo not found');
 
-    // Delete from storage
-    const { error: storageError } = await supabase.storage
-      .from('photos')
-      .remove([photo.file_path]);
-
-    if (storageError) throw storageError;
-
-    // Delete from database
-    const { error: deleteError } = await supabase
-      .from('photos')
-      .delete()
-      .eq('id', id);
-
-    if (deleteError) throw deleteError;
-  },
 
   // Get countries with photo counts
   async getCountriesWithCounts(): Promise<{ country: string; photo_count: number }[]> {
