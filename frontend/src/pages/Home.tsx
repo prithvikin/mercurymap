@@ -118,6 +118,14 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleRecentPhotoClick = (photo: Photo) => {
+    // Find if this photo is already in a group, or create a single photo group
+    const photoGroup = [photo];
+    setSelectedLocation(photoGroup);
+    setCurrentPhotoIndex(0);
+    setModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -238,13 +246,16 @@ const Home: React.FC = () => {
                 {/* Photo Display */}
                 <div className="space-y-4">
                   {selectedLocation.map((photo, index) => (
-                    <div key={photo.id} className="bg-gray-50 rounded-lg p-3">
+                    <div 
+                      key={photo.id} 
+                      className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handlePhotoClick(index)}
+                    >
                       <div className="relative">
                         <img
                           src={photo.file_url}
                           alt={photo.title || 'Photo'}
-                          className="w-full h-48 object-cover rounded mb-3 cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => handlePhotoClick(index)}
+                          className="w-full h-48 object-cover rounded mb-3 hover:opacity-90 transition-opacity"
                         />
 
                       </div>
@@ -276,7 +287,11 @@ const Home: React.FC = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {photos.slice(0, 6).map((photo) => (
-              <div key={photo.id} className="bg-gray-50 rounded-lg overflow-hidden">
+              <div 
+                key={photo.id} 
+                className="bg-gray-50 rounded-lg overflow-hidden cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleRecentPhotoClick(photo)}
+              >
                 <div className="relative">
                   <img
                     src={photo.file_url}
