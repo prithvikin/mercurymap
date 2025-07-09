@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { Analytics } from '@vercel/analytics/react';
 import Home from './pages/Home.tsx';
 import PhotoUpload from './pages/PhotoUpload.tsx';
 
@@ -14,6 +15,7 @@ function App() {
         </Routes>
       </main>
       <Toaster position="top-right" />
+      <Analytics />
     </div>
   );
 }
