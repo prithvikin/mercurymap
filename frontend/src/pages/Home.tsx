@@ -139,10 +139,10 @@ const Home: React.FC = () => {
       {/* Navigation Header */}
       <div className="bg-white rounded-lg shadow-lg p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <HomeIcon className="h-6 w-6 text-blue-600" />
             <h1 className="text-2xl font-bold text-gray-900">PhotoLog</h1>
-          </div>
+          </Link>
           <div className="flex items-center space-x-4">
             <Link
               to="/upload"
