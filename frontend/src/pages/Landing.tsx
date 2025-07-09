@@ -11,7 +11,7 @@ const Landing: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <Camera className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">PhotoLog</span>
+              <span className="text-xl font-bold text-gray-900">MercuryMap</span>
             </div>
             <div className="flex items-center space-x-4">
               <Link
@@ -45,8 +45,7 @@ const Landing: React.FC = () => {
               <span className="text-blue-600"> Mapped</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Share and discover travel photos from around the world. Upload your memories, 
-              explore destinations, and connect with fellow travelers through an interactive map experience.
+              Map your travels with photos on your personal MercuryMap. Connect with fellow travelers and share photos and destinations. 
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -77,8 +76,9 @@ const Landing: React.FC = () => {
               Everything you need to share your adventures
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              From interactive maps to seamless photo sharing, PhotoLog makes it easy to 
-              document and discover travel experiences worldwide.
+              From interactive maps to seamless photo sharing, MercuryMap makes it easy to 
+              document and discover travel experiences worldwide. Just as Mercury guided travelers 
+              across the ancient world, we guide your digital journey.
             </p>
           </div>
 
@@ -133,12 +133,13 @@ const Landing: React.FC = () => {
               <Sparkles className="h-12 w-12 text-white" />
             </div>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to start your journey?
-          </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Join travelers from around the world in sharing and discovering amazing destinations.
-          </p>
+                      <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Ready to start your journey?
+            </h2>
+            <p className="text-xl text-blue-100 mb-8">
+              Join travelers from around the world in sharing and discovering amazing destinations. 
+              Let Mercury guide your way.
+            </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/upload"
@@ -164,10 +165,10 @@ const Landing: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <Camera className="h-6 w-6 text-blue-400" />
-              <span className="text-lg font-semibold">PhotoLog</span>
+              <span className="text-lg font-semibold">MercuryMap</span>
             </div>
             <div className="text-gray-400 text-sm">
-              © 2024 PhotoLog. Made with ❤️ for travelers worldwide.
+              © 2025 MercuryMap. Made with ❤️ for travelers worldwide.
             </div>
           </div>
         </div>

@@ -95,7 +95,7 @@ const PhotoUpload: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Upload Photo</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Upload Photo to your MercuryMap</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

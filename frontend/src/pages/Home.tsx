@@ -141,7 +141,7 @@ const Home: React.FC = () => {
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <HomeIcon className="h-6 w-6 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900">PhotoLog</h1>
+            <h1 className="text-2xl font-bold text-gray-900">MercuryMap</h1>
           </Link>
           <div className="flex items-center space-x-4">
             <Link
@@ -161,7 +161,7 @@ const Home: React.FC = () => {
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Click on the map markers to view photos taken in different countries. 
-          Share your own travel memories by uploading photos to the map.
+          Share your own travel memories by uploading photos to your MercuryMap.
         </p>
       </div>
 
@@ -321,7 +321,7 @@ const Home: React.FC = () => {
           <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No photos yet</h3>
           <p className="text-gray-600 mb-4">
-            Be the first to share your travel photos on the map!
+            Be the first to share your travel photos on MercuryMap!
           </p>
           <Link
             to="/upload"
