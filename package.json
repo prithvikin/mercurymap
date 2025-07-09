@@ -1,5 +1,8 @@
 {
   "name": "photolog",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@vercel/analytics": "^1.5.0"
+  }
 }
