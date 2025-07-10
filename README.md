@@ -1,23 +1,26 @@
-# photoLog - Log your travels with photos
+# MercuryMap - Interactive Travel Photo Mapping
 
-A modern photo map application built with React, Supabase, and Vercel.
+A modern travel photo mapping application that lets you visualize your journeys on an interactive world map. Named after Mercury, the Roman god of travel, MercuryMap helps you explore destinations and connect with fellow travelers through shared experiences.
 
 ## 🚀 Features
 
-- **Interactive World Map** - Click on countries to view photos
-- **Photo Upload** - Drag & drop photo uploads with Supabase Storage
-- **User Authentication** - Built-in Supabase auth with email/password
-- **Real-time Updates** - Live photo updates across all users
-- **Responsive Design** - Works on desktop and mobile
-- **Modern Stack** - React, TypeScript, Tailwind CSS
+- **Interactive World Map** - Powered by Mapbox with search, clustering, and location-based photo viewing
+- **Photo Upload** - Drag & drop uploads with location autocomplete using OpenCage Geocoding
+- **Location Search** - Find and zoom to countries, cities, and destinations
+- **Photo Clustering** - Smart grouping of photos at the same location
+- **Fullscreen Viewing** - Modal carousel for detailed photo viewing with navigation
+- **Responsive Design** - Works seamlessly on desktop and mobile
+- **Modern UI** - Beautiful landing page with Tailwind CSS and Lucide icons
 
 ## 🛠 Tech Stack
 
 - **Frontend**: React 18 + TypeScript + Tailwind CSS
-- **Backend**: Supabase (Database, Auth, Storage)
+- **Backend**: Supabase (Database, Storage)
+- **Maps**: Mapbox GL JS + React Map GL
+- **Geocoding**: OpenCage Geocoding API
 - **Deployment**: Vercel
-- **Maps**: Leaflet + React Leaflet
 - **UI**: Lucide React Icons + React Hot Toast
+- **Analytics**: Vercel Analytics
 
 ## 📋 Prerequisites
 
@@ -34,15 +37,15 @@ A modern photo map application built with React, Supabase, and Vercel.
    - Go to [supabase.com](https://supabase.com)
    - Click "New Project"
    - Choose your organization
-   - Enter project name: `photo-map`
+   - Enter project name: `mercury-map`
    - Set database password
    - Choose region
    - Click "Create new project"
 
 2. **Set up the database**:
    - Go to SQL Editor in your Supabase dashboard
-   - Copy and paste the contents of `supabase/schema.sql`
-   - Click "Run" to create the tables and policies
+   - Copy and paste the contents of `supabase/schema_no_auth.sql` (for open uploads)
+   - Click "Run" to create the tables
 
 3. **Create Storage bucket**:
    - Go to Storage in your Supabase dashboard
@@ -59,19 +62,21 @@ A modern photo map application built with React, Supabase, and Vercel.
 
 1. **Clone and install dependencies**:
    ```bash
-   cd supabase-vercel/frontend
+   cd frontend
    npm install
    ```
 
 2. **Create environment file**:
    ```bash
-   cp .env.example .env.local
+   cp env.example .env.local
    ```
 
 3. **Update environment variables**:
    ```env
    REACT_APP_SUPABASE_URL=your_supabase_project_url
    REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+   REACT_APP_MAPBOX_TOKEN=your_mapbox_token
+   REACT_APP_OPENCAGE_API_KEY=your_opencage_api_key
    ```
 
 4. **Start development server**:
@@ -81,39 +86,26 @@ A modern photo map application built with React, Supabase, and Vercel.
 
 ### 3. Deploy to Vercel
 
-1. **Install Vercel CLI**:
-   ```bash
-   npm i -g vercel
-   ```
-
-2. **Deploy**:
-   ```bash
-   vercel
-   ```
-
-3. **Set environment variables in Vercel**:
-   - Go to your Vercel project dashboard
-   - Settings > Environment Variables
-   - Add:
-     - `REACT_APP_SUPABASE_URL`
-     - `REACT_APP_SUPABASE_ANON_KEY`
+1. **Connect your GitHub repository** to Vercel
+2. **Set environment variables** in Vercel dashboard
+3. **Deploy** - Vercel will automatically build and deploy
 
 ## 📁 Project Structure
 
 ```
-supabase-vercel/
+mercury-map/
 ├── frontend/                 # React frontend
 │   ├── src/
-│   │   ├── components/      # Reusable components
-│   │   ├── contexts/        # React contexts
-│   │   ├── lib/            # Supabase client
-│   │   ├── pages/          # Page components
-│   │   └── services/       # API services
+│   │   ├── components/      # Reusable components (MapSearch, LocationSearch)
+│   │   ├── lib/            # Supabase client and types
+│   │   ├── pages/          # Page components (Landing, Home, PhotoUpload)
+│   │   └── services/       # API services (photoService)
 │   ├── public/             # Static assets
 │   └── package.json
 ├── supabase/
-│   └── schema.sql          # Database schema
-└── vercel.json            # Vercel configuration
+│   ├── schema.sql          # Database schema with auth
+│   └── schema_no_auth.sql  # Database schema without auth
+└── README.md
 ```
 
 ## 🔧 Configuration
@@ -121,8 +113,7 @@ supabase-vercel/
 ### Supabase Configuration
 
 The app uses Supabase for:
-- **Database**: PostgreSQL with Row Level Security
-- **Authentication**: Email/password auth
+- **Database**: PostgreSQL for photo storage
 - **Storage**: File uploads for photos
 - **Real-time**: Live updates
 
@@ -132,10 +123,14 @@ The app uses Supabase for:
 # Frontend (.env.local)
 REACT_APP_SUPABASE_URL=your_supabase_url
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+REACT_APP_MAPBOX_TOKEN=your_mapbox_token
+REACT_APP_OPENCAGE_API_KEY=your_opencage_api_key
 
 # Vercel (set in dashboard)
 REACT_APP_SUPABASE_URL=your_supabase_url
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+REACT_APP_MAPBOX_TOKEN=your_mapbox_token
+REACT_APP_OPENCAGE_API_KEY=your_opencage_api_key
 ```
 
 ## 🗄 Database Schema
@@ -152,15 +147,14 @@ CREATE TABLE photos (
   taken_date DATE,
   file_path TEXT NOT NULL,
   file_url TEXT NOT NULL,
-  user_id UUID REFERENCES auth.users(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
-### Row Level Security Policies
-- Users can view all photos
-- Users can only insert/update/delete their own photos
+### Schema Options
+- **schema_no_auth.sql**: Open uploads without authentication
+- **schema.sql**: Includes user authentication and Row Level Security
 
 ## 🚀 Deployment
 
@@ -178,26 +172,23 @@ CREATE TABLE photos (
 
 ## 🔒 Security
 
-- **Row Level Security** enabled on all tables
-- **Authentication** required for photo uploads
 - **File validation** on uploads
 - **CORS** configured for your domain
+- **Optional authentication** with Row Level Security
 
 ## 📱 Features
 
-### Authentication
-- Email/password registration
-- Email verification
-- Password reset
-- Session management
-
 ### Photo Management
-- Drag & drop uploads
-- Image preview
-- Metadata editing
-- Delete photos (owner only)
+- Drag & drop uploads with location autocomplete
+- Image preview and metadata editing
+- Fullscreen viewing with carousel navigation
+- Location-based photo grouping
 
 ### Map Features
+- Interactive Mapbox integration
+- Location search and zoom functionality
+- Photo clustering for multiple photos at same location
+- Responsive sidebar for photo viewing
 - Interactive world map
 - Photo markers
 - Popup details

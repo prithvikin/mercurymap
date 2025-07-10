@@ -1,6 +1,6 @@
 {
-  "short_name": "photoLog",
-  "name": "photoLog - Share your travel photos on an interactive world map",
+  "short_name": "MercuryMap",
+  "name": "MercuryMap - Share your travel photos on an interactive world map",
   "icons": [
     {
       "src": "favicon.svg",
