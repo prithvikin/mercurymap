@@ -157,11 +157,11 @@ const Home: React.FC = () => {
 
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Explore Photos Around the World
+          Your MercuryMap
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Click on the map markers to view photos taken in different countries. 
-          Share your own travel memories by uploading photos to your MercuryMap.
+          Share your own travel memories by uploading photos.
         </p>
       </div>
 
