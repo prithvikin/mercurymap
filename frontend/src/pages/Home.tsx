@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Map, { Marker } from 'react-map-gl';
 import { photoService } from '../services/photoService.ts';
 import { Photo } from '../lib/supabase.ts';
-import { Camera, MapPin, Upload, Home as HomeIcon } from 'lucide-react';
+import { Camera, MapPin, Upload, Home as HomeIcon, LogIn, LogOut, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
+import { useAuth } from '../contexts/AuthContext.tsx';
 
-const Home: React.FC = () => {
+interface HomeProps {
+  showPublicMap?: boolean;
+}
+
+const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
+  const { user, signOut } = useAuth();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,13 +68,16 @@ const Home: React.FC = () => {
     toast.success(`Zoomed to ${location.name}`);
   };
 
-  useEffect(() => {
-    fetchPhotos();
-  }, []);
-
-  const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(async () => {
     try {
-      const data = await photoService.getAllPhotos();
+      let data;
+      if (user && !showPublicMap) {
+        // Fetch user's private photos
+        data = await photoService.getUserPhotos(user.id);
+      } else {
+        // Fetch public photos
+        data = await photoService.getAllPhotos();
+      }
       setPhotos(data);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Unknown error');
@@ -76,7 +85,11 @@ const Home: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, showPublicMap]);
+
+  useEffect(() => {
+    fetchPhotos();
+  }, [fetchPhotos]);
 
   // Group photos by location (same lat/lng)
   const groupedPhotos = photos.reduce((groups, photo) => {
@@ -144,9 +157,32 @@ const Home: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">MercuryMap</h1>
           </Link>
           <div className="flex items-center space-x-4">
+            {user ? (
+              <>
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm">{user.email}</span>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="flex items-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Sign In</span>
+              </Link>
+            )}
             <Link
               to="/upload"
-              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
             >
               <Upload className="h-4 w-4" />
               <span>Upload Photo</span>
@@ -157,12 +193,27 @@ const Home: React.FC = () => {
 
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Your MercuryMap
+          {showPublicMap ? 'Public MercuryMap' : user ? 'Your Private MercuryMap' : 'Public MercuryMap'}
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Click on the map markers to view photos taken in different countries. 
-          Share your own travel memories by uploading photos.
+          {showPublicMap
+            ? 'Click on the map markers to view public photos taken in different countries. Sign in to view your private map.'
+            : user
+              ? 'View your private travel photos on the map. Your photos are only visible to you.'
+              : 'Click on the map markers to view public photos taken in different countries. Sign in to view your private map.'
+          }
         </p>
+        {!user && !showPublicMap && (
+          <div className="mt-4">
+            <Link
+              to="/login"
+              className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <LogIn className="h-4 w-4" />
+              <span>Sign In to View Your Private Map</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Error display */}

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, MapPin, Globe, Upload, ArrowRight, Users, Sparkles } from 'lucide-react';
+import { Camera, MapPin, Globe, Upload, ArrowRight, Users, Sparkles, LogIn } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext.tsx';
 
 const Landing: React.FC = () => {
+  const { user, signOut } = useAuth();
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Navigation */}
@@ -26,6 +28,24 @@ const Landing: React.FC = () => {
               >
                 Upload Photo
               </Link>
+              {user ? (
+                <>
+                  <span className="text-gray-600">{user.email}</span>
+                  <button
+                    onClick={signOut}
+                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -49,28 +69,46 @@ const Landing: React.FC = () => {
               </div>
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              Your Travel Memories,
-              <span className="text-blue-600"> Mapped</span>
+              Your Travel Memories,<span className="text-blue-600"> Mapped</span>
             </h1>
-                        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-             MercuryMap displays your travel photos on a map, allowing them to tell better stories. Showcase your travel highlights and share photos and destinations with fellow travelers.
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              MercuryMap displays your travel photos on a map, allowing them to tell better stories. Showcase your travel highlights and share photos and destinations with fellow travelers.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/app"
-                className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-              >
-                <Globe className="h-5 w-5" />
-                <span>Explore the Map</span>
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link
-                to="/upload"
-                className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
-              >
-                <Upload className="h-5 w-5" />
-                <span>Share Your Photos</span>
-              </Link>
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-8">
+              <div className="bg-white/80 rounded-lg p-6 shadow flex flex-col items-center text-center">
+                <Globe className="h-8 w-8 text-blue-600 mb-2" />
+                <h2 className="text-2xl font-bold mb-2">Explore the Public Map</h2>
+                <p className="text-gray-700 mb-4"> Check out the public MercuryMap with photos shared by the creator—no account needed!</p>
+                <Link
+                  to="/public"
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <span>Explore Public Map</span>
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </div>
+              <div className="bg-white/80 rounded-lg p-6 shadow flex flex-col items-center text-center">
+                <Upload className="h-8 w-8 text-green-600 mb-2" />
+                <h2 className="text-2xl font-bold mb-2">Upload to Your Personal Map</h2>
+                <p className="text-gray-700 mb-4">Sign in to create your own private travel map. Upload your photos and see your journeys visualized.</p>
+                {user ? (
+                  <Link
+                    to="/upload"
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <span>Upload to My Map</span>
+                    <Upload className="h-5 w-5" />
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <span>Sign In to Upload</span>
+                    <LogIn className="h-5 w-5" />
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>

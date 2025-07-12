@@ -1,12 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
-import { X, FileImage } from 'lucide-react';
+import { X, FileImage, User, LogIn } from 'lucide-react';
 import { photoService } from '../services/photoService.ts';
 import toast from 'react-hot-toast';
 import LocationSearch from '../components/LocationSearch.tsx';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { Link } from 'react-router-dom';
 
 const PhotoUpload: React.FC = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     description: '',
     country: '',
@@ -23,6 +26,7 @@ const PhotoUpload: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadToPublic, setUploadToPublic] = useState(false);
   const navigate = useNavigate();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -75,16 +79,17 @@ const PhotoUpload: React.FC = () => {
     try {
       await photoService.uploadPhoto(
         selectedFile,
-        selectedLocation.city || 'Untitled', // Use city as title fallback
+        selectedLocation.city || 'Untitled',
         formData.description,
         selectedLocation.country,
         selectedLocation.lat,
         selectedLocation.lng,
-        formData.taken_date || null
+        formData.taken_date || null,
+        (user && user.email === 'mercurymap725@gmail.com' && uploadToPublic) ? undefined : user?.id
       );
 
       toast.success('Photo uploaded successfully!');
-      navigate('/');
+      navigate(user ? '/app' : '/');
     } catch (error: any) {
       toast.error(error.message || 'Upload failed');
     } finally {
@@ -95,7 +100,58 @@ const PhotoUpload: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Upload Photo to your MercuryMap</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Upload Photo to {user ? (user.email === 'mercurymap725@gmail.com' && uploadToPublic ? 'the Public' : 'Your Private') : 'the Public'} MercuryMap
+          </h1>
+          {user && (
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <User className="h-4 w-4" />
+              <span>{user.email}</span>
+            </div>
+          )}
+        </div>
+        
+        {user && user.email === 'mercurymap725@gmail.com' && (
+          <div className="mb-4">
+            <label className="inline-flex items-center">
+              <input
+                type="checkbox"
+                checked={uploadToPublic}
+                onChange={() => setUploadToPublic(!uploadToPublic)}
+                className="form-checkbox h-5 w-5 text-blue-600"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                Upload to <span className="font-semibold">public MercuryMap</span>
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1">
+              Only you can upload to the public map. Unchecked = private map.
+            </p>
+          </div>
+        )}
+
+        {user && user.email !== 'mercurymap725@gmail.com' && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <p className="text-sm text-yellow-800">
+              Your uploads will go to your private map.
+            </p>
+          </div>
+        )}
+        {!user && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-800 mb-2">
+              Sign in to upload to your private map.
+            </p>
+            <Link
+              to="/login"
+              className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm"
+            >
+              <LogIn className="h-4 w-4" />
+              <span>Sign In</span>
+            </Link>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

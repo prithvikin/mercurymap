@@ -5,6 +5,8 @@ A modern travel photo mapping application that lets you visualize your journeys 
 ## 🚀 Features
 
 - **Interactive World Map** - Powered by Mapbox with search, clustering, and location-based photo viewing
+- **User Authentication** - Sign up/sign in to access private photo maps
+- **Public & Private Maps** - View public photos or your private collection
 - **Photo Upload** - Drag & drop uploads with location autocomplete using OpenCage Geocoding
 - **Location Search** - Find and zoom to countries, cities, and destinations
 - **Photo Clustering** - Smart grouping of photos at the same location
@@ -44,8 +46,9 @@ A modern travel photo mapping application that lets you visualize your journeys 
 
 2. **Set up the database**:
    - Go to SQL Editor in your Supabase dashboard
-   - Copy and paste the contents of `supabase/schema_no_auth.sql` (for open uploads)
+   - Copy and paste the contents of `supabase/schema.sql` (includes authentication)
    - Click "Run" to create the tables
+   - Run the migration script `supabase/migrate_existing_photos.sql` to set existing photos as public
 
 3. **Create Storage bucket**:
    - Go to Storage in your Supabase dashboard
@@ -147,14 +150,15 @@ CREATE TABLE photos (
   taken_date DATE,
   file_path TEXT NOT NULL,
   file_url TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
 ### Schema Options
-- **schema_no_auth.sql**: Open uploads without authentication
-- **schema.sql**: Includes user authentication and Row Level Security
+- **schema.sql**: Includes user authentication and Row Level Security (recommended)
+- **schema_no_auth.sql**: Open uploads without authentication (legacy)
 
 ## 🚀 Deployment
 
@@ -172,9 +176,11 @@ CREATE TABLE photos (
 
 ## 🔒 Security
 
+- **User authentication** with Supabase Auth
+- **Row Level Security** for private photo access
 - **File validation** on uploads
 - **CORS** configured for your domain
-- **Optional authentication** with Row Level Security
+- **Private maps** for authenticated users
 
 ## 📱 Features
 
