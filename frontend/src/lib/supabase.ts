@@ -15,6 +15,7 @@ export interface Photo {
   taken_date: string | null
   file_path: string
   file_url: string
+  user_id: string | null
   created_at: string
   updated_at: string
 }

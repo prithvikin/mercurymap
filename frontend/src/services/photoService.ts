@@ -1,22 +1,49 @@
 import { supabase, Photo } from '../lib/supabase.ts';
 
 export const photoService = {
-  // Get all photos
+  // Get all photos (public only)
   async getAllPhotos(): Promise<Photo[]> {
     const { data, error } = await supabase
       .from('photos')
       .select('*')
+      .is('user_id', null) // Only public photos (no user_id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data || [];
   },
 
-  // Get photos by country
+  // Get user's photos
+  async getUserPhotos(userId: string): Promise<Photo[]> {
+    const { data, error } = await supabase
+      .from('photos')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Get photos by country (public only)
   async getPhotosByCountry(country: string): Promise<Photo[]> {
     const { data, error } = await supabase
       .from('photos')
       .select('*')
+      .eq('country', country)
+      .is('user_id', null) // Only public photos
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Get user's photos by country
+  async getUserPhotosByCountry(userId: string, country: string): Promise<Photo[]> {
+    const { data, error } = await supabase
+      .from('photos')
+      .select('*')
+      .eq('user_id', userId)
       .eq('country', country)
       .order('created_at', { ascending: false });
 
@@ -44,7 +71,8 @@ export const photoService = {
     country: string,
     latitude: number | null,
     longitude: number | null,
-    takenDate: string | null
+    takenDate: string | null,
+    userId?: string
   ): Promise<Photo> {
     // Upload file to Supabase Storage
     const fileExt = file.name.split('.').pop();
@@ -74,6 +102,7 @@ export const photoService = {
         taken_date: takenDate,
         file_path: filePath,
         file_url: urlData.publicUrl,
+        user_id: userId || null, // Set user_id if provided, otherwise null for public photos
       })
       .select()
       .single();
@@ -84,11 +113,33 @@ export const photoService = {
 
 
 
-  // Get countries with photo counts
+  // Get countries with photo counts (public only)
   async getCountriesWithCounts(): Promise<{ country: string; photo_count: number }[]> {
     const { data, error } = await supabase
       .from('photos')
       .select('country')
+      .is('user_id', null) // Only public photos
+      .order('country');
+
+    if (error) throw error;
+
+    const counts = data?.reduce((acc, photo) => {
+      acc[photo.country] = (acc[photo.country] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(counts || {}).map(([country, photo_count]) => ({
+      country,
+      photo_count: photo_count as number,
+    }));
+  },
+
+  // Get user's countries with photo counts
+  async getUserCountriesWithCounts(userId: string): Promise<{ country: string; photo_count: number }[]> {
+    const { data, error } = await supabase
+      .from('photos')
+      .select('country')
+      .eq('user_id', userId)
       .order('country');
 
     if (error) throw error;
