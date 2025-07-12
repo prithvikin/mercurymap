@@ -56,7 +56,7 @@ const Landing: React.FC = () => {
         <div 
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 relative"
           style={{
-            backgroundImage: `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" fill="%23f3f4f6" opacity="0.4"><path d="M100,150 Q150,100 200,150 T300,150 Q350,100 400,150 T500,150 Q550,100 600,150 T700,150 Q750,100 800,150 T900,150 M50,200 Q100,150 150,200 T250,200 Q300,150 350,200 T450,200 Q500,150 550,200 T650,200 Q700,150 750,200 T850,200 Q900,150 950,200 M100,250 Q150,200 200,250 T300,250 Q350,200 400,250 T500,250 Q550,200 600,250 T700,250 Q750,200 800,250 T900,250 M50,300 Q100,250 150,300 T250,300 Q300,250 350,300 T450,300 Q500,250 550,300 T650,300 Q700,250 750,300 T850,300 Q900,250 950,300 M100,350 Q150,300 200,350 T300,350 Q350,300 400,350 T500,350 Q550,300 600,350 T700,350 Q750,300 800,350 T900,350" stroke="%23d1d5db" stroke-width="0.5" fill="none"/><circle cx="200" cy="180" r="3" fill="%23d1d5db"/><circle cx="400" cy="220" r="3" fill="%23d1d5db"/><circle cx="600" cy="200" r="3" fill="%23d1d5db"/><circle cx="800" cy="240" r="3" fill="%23d1d5db"/><circle cx="300" cy="280" r="3" fill="%23d1d5db"/><circle cx="500" cy="320" r="3" fill="%23d1d5db"/><circle cx="700" cy="300" r="3" fill="%23d1d5db"/></svg>')`,
+            backgroundImage: `url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1000 500\" fill=\"%23f3f4f6\" opacity=\"0.4\"><path d=\"M100,150 Q150,100 200,150 T300,150 Q350,100 400,150 T500,150 Q550,100 600,150 T700,150 Q750,100 800,150 T900,150 M50,200 Q100,150 150,200 T250,200 Q300,150 350,200 T450,200 Q500,150 550,200 T650,200 Q700,150 750,200 T850,200 Q900,150 950,200 M100,250 Q150,200 200,250 T300,250 Q350,200 400,250 T500,250 Q550,200 600,250 T700,250 Q750,200 800,250 T900,250 M50,300 Q100,250 150,300 T250,300 Q300,250 350,300 T450,300 Q500,250 550,300 T650,300 Q700,250 750,300 T850,300 Q900,250 950,300 M100,350 Q150,300 200,350 T300,350 Q350,300 400,350 T500,350 Q550,300 600,350 T700,350 Q750,300 800,350 T900,350\" stroke=\"%23d1d5db\" stroke-width=\"0.5\" fill=\"none\"/><circle cx=\"200\" cy=\"180\" r=\"3\" fill=\"%23d1d5db\"/><circle cx=\"400\" cy=\"220\" r=\"3\" fill=\"%23d1d5db\"/><circle cx=\"600\" cy=\"200\" r=\"3\" fill=\"%23d1d5db\"/><circle cx=\"800\" cy=\"240\" r=\"3\" fill=\"%23d1d5db\"/><circle cx=\"300\" cy=\"280\" r=\"3\" fill=\"%23d1d5db\"/><circle cx=\"500\" cy=\"320\" r=\"3\" fill=\"%23d1d5db\"/><circle cx=\"700\" cy=\"300\" r=\"3\" fill=\"%23d1d5db\"/></svg>')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
@@ -69,35 +69,46 @@ const Landing: React.FC = () => {
               </div>
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              Your Travel Memories,
-              <span className="text-blue-600"> Mapped</span>
+              Your Travel Memories,<span className="text-blue-600"> Mapped</span>
             </h1>
-                        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-             MercuryMap displays your travel photos on a map, allowing them to tell better stories. Showcase your travel highlights and share photos and destinations with fellow travelers.
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              MercuryMap displays your travel photos on a map, allowing them to tell better stories. Showcase your travel highlights and share photos and destinations with fellow travelers.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/app"
-                className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-              >
-                <Globe className="h-5 w-5" />
-                <span>Explore the Map</span>
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link
-                to="/login"
-                className="bg-white text-blue-600 border-2 border-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
-              >
-                <LogIn className="h-5 w-5" />
-                <span>Sign In</span>
-              </Link>
-              <Link
-                to="/upload"
-                className="bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
-              >
-                <Upload className="h-5 w-5" />
-                <span>Share Your Photos</span>
-              </Link>
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-8">
+              <div className="bg-white/80 rounded-lg p-6 shadow flex flex-col items-center text-center">
+                <Globe className="h-8 w-8 text-blue-600 mb-2" />
+                <h2 className="text-2xl font-bold mb-2">Explore the Public Map</h2>
+                <p className="text-gray-700 mb-4"> Check out the public MercuryMap with photos shared by the creator—no account needed!</p>
+                <Link
+                  to="/public"
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <span>Explore Public Map</span>
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </div>
+              <div className="bg-white/80 rounded-lg p-6 shadow flex flex-col items-center text-center">
+                <Upload className="h-8 w-8 text-green-600 mb-2" />
+                <h2 className="text-2xl font-bold mb-2">Upload to Your Personal Map</h2>
+                <p className="text-gray-700 mb-4">Sign in to create your own private travel map. Upload your photos and see your journeys visualized.</p>
+                {user ? (
+                  <Link
+                    to="/upload"
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <span>Upload to My Map</span>
+                    <Upload className="h-5 w-5" />
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <span>Sign In to Upload</span>
+                    <LogIn className="h-5 w-5" />
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>

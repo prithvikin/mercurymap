@@ -8,7 +8,11 @@ import { Link } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
-const Home: React.FC = () => {
+interface HomeProps {
+  showPublicMap?: boolean;
+}
+
+const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   const { user, signOut } = useAuth();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,14 +68,10 @@ const Home: React.FC = () => {
     toast.success(`Zoomed to ${location.name}`);
   };
 
-  useEffect(() => {
-    fetchPhotos();
-  }, [user]);
-
   const fetchPhotos = useCallback(async () => {
     try {
       let data;
-      if (user) {
+      if (user && !showPublicMap) {
         // Fetch user's private photos
         data = await photoService.getUserPhotos(user.id);
       } else {
@@ -85,7 +85,11 @@ const Home: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, showPublicMap]);
+
+  useEffect(() => {
+    fetchPhotos();
+  }, [fetchPhotos]);
 
   // Group photos by location (same lat/lng)
   const groupedPhotos = photos.reduce((groups, photo) => {
@@ -189,15 +193,17 @@ const Home: React.FC = () => {
 
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          {user ? 'Your Private MercuryMap' : 'Public MercuryMap'}
+          {showPublicMap ? 'Public MercuryMap' : user ? 'Your Private MercuryMap' : 'Public MercuryMap'}
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          {user 
-            ? 'View your private travel photos on the map. Your photos are only visible to you.'
-            : 'Click on the map markers to view public photos taken in different countries. Sign in to view your private map.'
+          {showPublicMap
+            ? 'Click on the map markers to view public photos taken in different countries. Sign in to view your private map.'
+            : user
+              ? 'View your private travel photos on the map. Your photos are only visible to you.'
+              : 'Click on the map markers to view public photos taken in different countries. Sign in to view your private map.'
           }
         </p>
-        {!user && (
+        {!user && !showPublicMap && (
           <div className="mt-4">
             <Link
               to="/login"

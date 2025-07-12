@@ -15,6 +15,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/app" element={<Home />} />
+        <Route path="/public" element={<Home showPublicMap={true} />} />
         <Route path="/upload" element={<PhotoUpload />} />
       </Routes>
       <Toaster position="top-right" />
