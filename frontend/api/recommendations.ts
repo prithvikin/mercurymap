@@ -1,43 +1,70 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
-import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { createClient } from '@supabase/supabase-js';
-import { z } from 'zod';
 
-// Below this, there isn't enough signal to infer a taste — and we don't want to
-// spend an API call to tell someone we don't know them yet.
+// Below this, there isn't enough signal to infer a taste -- and we don't want
+// to spend an API call to tell someone we don't know them yet.
 const MIN_PHOTOS = 3;
 
 // Cap on how many places we describe to the model, so prompt size stays bounded
 // no matter how many photos a user uploads.
 const MAX_LOCATIONS = 50;
 
-const RecommendationSchema = z.object({
-  intro: z.string(),
-  suggestions: z
-    .array(
-      z.object({
-        place: z.string(),
-        country: z.string(),
-        latitude: z.number(),
-        longitude: z.number(),
-        reason: z.string(),
-      })
-    )
-    .min(3)
-    .max(5),
-});
+interface Suggestion {
+  place: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  reason: string;
+}
+
+interface RecommendationResult {
+  intro: string;
+  suggestions: Suggestion[];
+}
+
+// Structured-output schema written as raw JSON Schema rather than via zod.
+// zod v4's type definitions use `const` type parameters, which need TypeScript
+// 5; this project builds with the TypeScript that ships with react-scripts 5.
+// Vercel's cloud build has its own newer compiler, so zod parsed there but not
+// under `vercel dev`. Raw JSON Schema keeps local and deployed builds identical
+// and drops a dependency we never really needed.
+const RECOMMENDATION_SCHEMA: { [key: string]: unknown } = {
+  type: 'object',
+  properties: {
+    intro: { type: 'string' },
+    suggestions: {
+      type: 'array',
+      minItems: 3,
+      maxItems: 5,
+      items: {
+        type: 'object',
+        properties: {
+          place: { type: 'string' },
+          country: { type: 'string' },
+          latitude: { type: 'number' },
+          longitude: { type: 'number' },
+          reason: { type: 'string' },
+        },
+        required: ['place', 'country', 'latitude', 'longitude', 'reason'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['intro', 'suggestions'],
+  additionalProperties: false,
+};
 
 const SYSTEM_PROMPT = `You are the travel recommendation engine for MercuryMap, a photo-mapping app.
 
-You are given the list of places a user has photographed. Infer the *kind* of travel they enjoy — terrain, climate, pace, and activity — and suggest new destinations that fit.
+You are given the list of places a user has photographed. Infer the *kind* of travel they enjoy -- terrain, climate, pace, and activity -- and suggest new destinations that fit.
 
 Rules:
 - "intro" names the pattern you noticed, in warm, conversational second person. One or two sentences. Examples of the register: "I see you're drawn to coastal cities" or "Looks like you chase a bit of adrenaline".
 - Suggest 3 to 5 destinations the user has NOT already visited.
 - Each "reason" is a single sentence tying the suggestion to something concrete in their history.
 - Latitude and longitude must be the real coordinates of the place you name, since the app drops a map pin there.
-- Prefer specific places — a city, region, or national park — over whole countries.
+- Prefer specific places -- a city, region, or national park -- over whole countries.
 - If the history is thin or scattered with no clear pattern, say so honestly in the intro and suggest broadly appealing places rather than inventing a theme.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -47,9 +74,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY } = process.env;
+  // Checking the destructured consts (rather than a computed list) is what lets
+  // TypeScript narrow them to string below.
   if (!ANTHROPIC_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('Missing required environment variables');
-    return res.status(500).json({ error: 'Server is not configured' });
+    // Name the missing ones -- a guard that only says "not configured" gives
+    // you nothing to act on. Names only, never values.
+    const missing = (
+      ['ANTHROPIC_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'] as const
+    ).filter((name) => !process.env[name]);
+    console.error('Missing required environment variables:', missing.join(', '));
+    return res.status(500).json({ error: 'Server is not configured', missing });
   }
 
   // Identity comes from the caller's Supabase JWT, never from the request body.
@@ -136,19 +170,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         (p) =>
           `- ${p.title}, ${p.country} (${Number(p.latitude).toFixed(2)}, ${Number(
             p.longitude
-          ).toFixed(2)})${p.taken_date ? ` — ${p.taken_date}` : ''}`
+          ).toFixed(2)})${p.taken_date ? ` -- ${p.taken_date}` : ''}`
       )
       .join('\n');
 
     const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
-    const message = await anthropic.messages.parse({
+    const message = await anthropic.messages.create({
       model: 'claude-opus-5',
       max_tokens: 4096,
       thinking: { type: 'adaptive' },
       output_config: {
         effort: 'low',
-        format: zodOutputFormat(RecommendationSchema),
+        format: { type: 'json_schema', schema: RECOMMENDATION_SCHEMA },
       },
       system: SYSTEM_PROMPT,
       messages: [
@@ -159,9 +193,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
     });
 
-    const result = message.parsed_output;
-    if (!result) {
-      console.error('Model returned no parsable output', message.stop_reason);
+    // The schema constrains what the model writes, but the transport is still
+    // a text block -- find it and parse.
+    const textBlock = message.content.find((block) => block.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') {
+      console.error('No text block in response, stop_reason:', message.stop_reason);
+      return res
+        .status(502)
+        .json({ error: 'Could not generate recommendations, please try again' });
+    }
+
+    let result: RecommendationResult;
+    try {
+      result = JSON.parse(textBlock.text);
+    } catch (parseError) {
+      console.error('Response was not valid JSON:', parseError);
+      return res
+        .status(502)
+        .json({ error: 'Could not generate recommendations, please try again' });
+    }
+
+    // Cheap shape check, since zod is no longer doing it for us.
+    if (
+      typeof result?.intro !== 'string' ||
+      !Array.isArray(result?.suggestions) ||
+      result.suggestions.length === 0
+    ) {
+      console.error('Response did not match the expected shape');
       return res
         .status(502)
         .json({ error: 'Could not generate recommendations, please try again' });
