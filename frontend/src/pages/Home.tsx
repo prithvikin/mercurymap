@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
 import RecommendationsPanel from '../components/RecommendationsPanel.tsx';
+import CommunityRecommendationsPanel from '../components/CommunityRecommendationsPanel.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
 interface HomeProps {
@@ -337,6 +338,10 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
           photoCount={photos.length}
           onSelectPlace={handleLocationSearch}
         />
+      )}
+
+      {showPublicMap && (
+        <CommunityRecommendationsPanel onSelectPlace={handleLocationSearch} />
       )}
 
       {photos.length > 0 && (
