@@ -2,13 +2,22 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 
-// Below this, there isn't enough signal to infer a taste -- and we don't want
-// to spend an API call to tell someone we don't know them yet.
+// Same reasoning as /api/recommendations.ts: below this there isn't enough
+// signal in the community's public photos to say anything, so don't spend a
+// call telling visitors we don't know yet.
 const MIN_PHOTOS = 3;
 
-// Cap on how many places we describe to the model, so prompt size stays bounded
-// no matter how many photos a user uploads.
+// Cap on how many places we describe to the model, so prompt size stays
+// bounded no matter how many public photos accumulate.
 const MAX_LOCATIONS = 50;
+
+// There's no per-visitor identity to key a cache off of, so this endpoint
+// keeps one global row and regenerates it at most this often. That's what
+// keeps an unauthenticated, unrate-limited endpoint cheap: worst case is one
+// extra Claude call per day, no matter how much anonymous traffic hits it.
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+const CACHE_ROW_ID = 'global';
 
 interface Suggestion {
   place: string;
@@ -23,12 +32,9 @@ interface RecommendationResult {
   suggestions: Suggestion[];
 }
 
-// Structured-output schema written as raw JSON Schema rather than via zod.
-// zod v4's type definitions use `const` type parameters, which need TypeScript
-// 5; this project builds with the TypeScript that ships with react-scripts 5.
-// Vercel's cloud build has its own newer compiler, so zod parsed there but not
-// under `vercel dev`. Raw JSON Schema keeps local and deployed builds identical
-// and drops a dependency we never really needed.
+// Raw JSON Schema for the same reason as the personal endpoint: zod v4 needs
+// TypeScript 5, and react-scripts 5 ships an older compiler than Vercel's
+// cloud build, so local and deployed builds would otherwise disagree.
 const RECOMMENDATION_SCHEMA: { [key: string]: unknown } = {
   type: 'object',
   properties: {
@@ -59,86 +65,46 @@ const RECOMMENDATION_SCHEMA: { [key: string]: unknown } = {
 
 const SYSTEM_PROMPT = `You are the travel recommendation engine for MercuryMap, a photo-mapping app.
 
-You are given the list of places a user has photographed. Infer the *kind* of travel they enjoy -- terrain, climate, pace, and activity -- and suggest new destinations that fit.
+You are given the list of places the whole community has publicly photographed. You're writing for a visitor who hasn't uploaded anything yet, so this isn't personalized -- it's a snapshot of where MercuryMap's travelers have actually been, framed as inspiration.
 
 Rules:
-- "intro" names the pattern you noticed, in warm, conversational second person. One or two sentences. Examples of the register: "I see you're drawn to coastal cities" or "Looks like you chase a bit of adrenaline".
-- Suggest 3 to 5 destinations the user has NOT already visited.
-- Each "reason" is a single sentence tying the suggestion to something concrete in their history.
+- "intro" is one or two warm, conversational sentences characterizing the community's travel pattern so far -- e.g. "MercuryMap's travelers are drawn to coastal cities" or "This community loves a bit of adrenaline". Talk about "the community" / "travelers here", not "you".
+- Suggest 3 to 5 destinations drawn from or clearly in the spirit of what's already been photographed.
+- Each "reason" is a single sentence tying the suggestion to something concrete in the community's photos.
 - Latitude and longitude must be the real coordinates of the place you name, since the app drops a map pin there.
 - Prefer specific places -- a city, region, or national park -- over whole countries.
-- If the history is thin or scattered with no clear pattern, say so honestly in the intro and suggest broadly appealing places rather than inventing a theme.`;
+- If the photos are thin or scattered with no clear pattern, say so honestly in the intro and suggest broadly appealing places rather than inventing a theme.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY } = process.env;
-  // Checking the destructured consts (rather than a computed list) is what lets
-  // TypeScript narrow them to string below.
-  if (!ANTHROPIC_API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    // Name the missing ones -- a guard that only says "not configured" gives
-    // you nothing to act on. Names only, never values.
+  const { ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
+  if (!ANTHROPIC_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = (
-      ['ANTHROPIC_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY'] as const
+      ['ANTHROPIC_API_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'] as const
     ).filter((name) => !process.env[name]);
     console.error('Missing required environment variables:', missing.join(', '));
     return res.status(500).json({ error: 'Server is not configured', missing });
   }
 
-  // Identity comes from the caller's Supabase JWT, never from the request body.
-  // Trusting a body-supplied user id would let anyone read anyone's history.
-  const authHeader = req.headers.authorization ?? '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) {
-    return res.status(401).json({ error: 'Missing authorization token' });
-  }
-
-  // Passing the token through to PostgREST means every query below runs as this
-  // user under RLS, so the policies are the enforcement, not our own filtering.
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
+  // No caller identity here -- this is a public, unauthenticated endpoint.
+  // It uses the service role key (bypasses RLS) because it's the only thing
+  // that ever touches community_recommendations, and because the public
+  // photos it reads are meant to be world-readable anyway.
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData?.user) {
-    return res.status(401).json({ error: 'Invalid or expired session' });
-  }
-  const user = userData.user;
 
   try {
     const { data: photos, error: photosError } = await supabase
       .from('photos')
-      .select('title, country, latitude, longitude, taken_date')
-      .eq('user_id', user.id);
+      .select('title, country, latitude, longitude')
+      .is('user_id', null);
 
     if (photosError) throw photosError;
-
-    const photoCount = photos?.length ?? 0;
-    if (photoCount < MIN_PHOTOS) {
-      return res.status(200).json({
-        needsMorePhotos: true,
-        photo_count: photoCount,
-        required: MIN_PHOTOS,
-      });
-    }
-
-    const refresh = req.body?.refresh === true;
-
-    if (!refresh) {
-      const { data: cached } = await supabase
-        .from('recommendations')
-        .select('intro, suggestions, photo_count, created_at')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (cached) {
-        return res.status(200).json({ ...cached, cached: true });
-      }
-    }
 
     // "Untitled" is the upload fallback when the geocoder gave us no city, so
     // those rows carry no place signal worth sending.
@@ -160,11 +126,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .slice(0, MAX_LOCATIONS);
 
     if (locations.length < MIN_PHOTOS) {
-      return res.status(200).json({
-        needsMorePhotos: true,
-        photo_count: photoCount,
-        required: MIN_PHOTOS,
-      });
+      return res.status(200).json({ needsMoreData: true });
+    }
+
+    const { data: cached } = await supabase
+      .from('community_recommendations')
+      .select('intro, suggestions, source_photo_count, created_at')
+      .eq('id', CACHE_ROW_ID)
+      .maybeSingle();
+
+    if (cached && Date.now() - new Date(cached.created_at).getTime() < CACHE_TTL_MS) {
+      return res.status(200).json({ ...cached, cached: true });
     }
 
     const locationList = locations
@@ -172,7 +144,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         (p) =>
           `- ${p.title}, ${p.country} (${Number(p.latitude).toFixed(2)}, ${Number(
             p.longitude
-          ).toFixed(2)})${p.taken_date ? ` -- ${p.taken_date}` : ''}`
+          ).toFixed(2)})`
       )
       .join('\n');
 
@@ -190,13 +162,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messages: [
         {
           role: 'user',
-          content: `Here are the ${locations.length} places I've photographed:\n\n${locationList}\n\nWhere should I go next?`,
+          content: `Here are the ${locations.length} places MercuryMap's community has photographed:\n\n${locationList}\n\nWhat should a new visitor consider for their next trip?`,
         },
       ],
     });
 
-    // The schema constrains what the model writes, but the transport is still
-    // a text block -- find it and parse.
     const textBlock = message.content.find((block) => block.type === 'text');
     if (!textBlock || textBlock.type !== 'text') {
       console.error('No text block in response, stop_reason:', message.stop_reason);
@@ -215,7 +185,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .json({ error: 'Could not generate recommendations, please try again' });
     }
 
-    // Cheap shape check, since zod is no longer doing it for us.
     if (
       typeof result?.intro !== 'string' ||
       !Array.isArray(result?.suggestions) ||
@@ -230,30 +199,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // maxItems isn't enforceable in the schema itself, so clamp here.
     result.suggestions = result.suggestions.slice(0, 5);
 
-    const { error: writeError } = await supabase.from('recommendations').upsert(
+    const { error: writeError } = await supabase.from('community_recommendations').upsert(
       {
-        user_id: user.id,
+        id: CACHE_ROW_ID,
         intro: result.intro,
         suggestions: result.suggestions,
-        photo_count: photoCount,
+        source_photo_count: locations.length,
         created_at: new Date().toISOString(),
       },
-      { onConflict: 'user_id' }
+      { onConflict: 'id' }
     );
 
-    // A failed cache write shouldn't cost the user the result they just paid for.
+    // A failed cache write shouldn't cost the visitor the result already generated.
     if (writeError) {
-      console.error('Failed to cache recommendations:', writeError.message);
+      console.error('Failed to cache community recommendations:', writeError.message);
     }
 
     return res.status(200).json({
       intro: result.intro,
       suggestions: result.suggestions,
-      photo_count: photoCount,
+      source_photo_count: locations.length,
       cached: false,
     });
   } catch (err) {
-    console.error('Recommendation generation failed:', err);
+    console.error('Community recommendation generation failed:', err);
     return res.status(500).json({ error: 'Could not generate recommendations' });
   }
 }
