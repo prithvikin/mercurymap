@@ -1,0 +1,24 @@
+{
+  "//": [
+    "Scoped to api/ only. A tsconfig at the frontend/ root breaks the CRA build,",
+    "because this codebase imports with explicit .tsx extensions and TypeScript",
+    "rejects those (TS2691) once a tsconfig exists. Keeping it here fixes the",
+    "serverless function build without touching the app build.",
+    "target es2020: the Anthropic SDK uses #private class fields, which fail to",
+    "parse under Vercel's default ES5 target (TS18028).",
+    "skipLibCheck: @supabase/auth-js references optional Solana wallet types that",
+    "aren't installed."
+  ],
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": ["es2020"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts"]
+}

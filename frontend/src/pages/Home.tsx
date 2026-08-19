@@ -6,6 +6,7 @@ import { Camera, MapPin, Upload, Home as HomeIcon, LogIn, LogOut, User } from 'l
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
+import RecommendationsPanel from '../components/RecommendationsPanel.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
 interface HomeProps {
@@ -13,7 +14,7 @@ interface HomeProps {
 }
 
 const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -330,6 +331,13 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
           )}
         </div>
       </div>
+
+      {!authLoading && user && !showPublicMap && photos.length > 0 && (
+        <RecommendationsPanel
+          photoCount={photos.length}
+          onSelectPlace={handleLocationSearch}
+        />
+      )}
 
       {photos.length > 0 && (
         <div className="bg-white rounded-lg shadow-lg p-6">

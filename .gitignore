@@ -83,3 +83,4 @@ jspm_packages/
 
 # Supabase
 .supabase/ 
+.env*.local
