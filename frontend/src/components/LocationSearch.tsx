@@ -130,23 +130,23 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
             setHighlightedIndex(-1);
           }, 200);
         }}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         placeholder={placeholder}
       />
-      
+
       {suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-auto">
+        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-auto">
           {suggestions.map((item, index) => (
             <div
               key={item.formatted}
               className={`p-2 cursor-pointer ${
-                index === highlightedIndex ? 'bg-blue-100' : 'bg-white'
-              } hover:bg-gray-50 border-b border-gray-200 last:border-b-0`}
+                index === highlightedIndex ? 'bg-indigo-50' : 'bg-white'
+              } hover:bg-slate-50 border-b border-slate-100 last:border-b-0`}
               onClick={() => handleSuggestionClick(item)}
             >
-              <div className="font-medium">{item.formatted}</div>
-              <div className="text-sm text-gray-500">
-                {item.components.city && item.components.country 
+              <div className="font-medium text-slate-900">{item.formatted}</div>
+              <div className="text-sm text-slate-500">
+                {item.components.city && item.components.country
                   ? `${item.components.city}, ${item.components.country}`
                   : item.formatted
                 }
@@ -155,10 +155,10 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
           ))}
         </div>
       )}
-      
+
       {loading && (
         <div className="absolute right-3 top-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
         </div>
       )}
     </div>
