@@ -9,8 +9,10 @@ import MapSearch from '../components/MapSearch.tsx';
 import RecommendationsPanel from '../components/RecommendationsPanel.tsx';
 import CommunityRecommendationsPanel from '../components/CommunityRecommendationsPanel.tsx';
 import NavBar from '../components/NavBar.tsx';
+import PhotoImage from '../components/PhotoImage.tsx';
 import Card from '../components/ui/Card.tsx';
 import { button } from '../components/ui/buttonStyles.ts';
+import { photoDate } from '../lib/photoDate.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
 interface HomeProps {
@@ -25,6 +27,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   const [selectedLocation, setSelectedLocation] = useState<Photo[] | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
   const mapRef = useRef<any>(null);
 
   // Initial map state for reset functionality
@@ -115,26 +118,48 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
     setModalOpen(true);
   };
 
-  const handleModalClose = () => {
+  const handleModalClose = useCallback(() => {
     setModalOpen(false);
     setCurrentPhotoIndex(0);
-  };
+  }, []);
 
-  const handleNextPhoto = () => {
-    if (selectedLocation) {
-      setCurrentPhotoIndex((prev) =>
-        prev === selectedLocation.length - 1 ? 0 : prev + 1
-      );
-    }
-  };
+  const handleNextPhoto = useCallback(() => {
+    setCurrentPhotoIndex((prev) =>
+      selectedLocation && prev === selectedLocation.length - 1 ? 0 : prev + 1
+    );
+  }, [selectedLocation]);
 
-  const handlePrevPhoto = () => {
-    if (selectedLocation) {
-      setCurrentPhotoIndex((prev) =>
-        prev === 0 ? selectedLocation.length - 1 : prev - 1
-      );
-    }
-  };
+  const handlePrevPhoto = useCallback(() => {
+    setCurrentPhotoIndex((prev) =>
+      prev === 0 && selectedLocation ? selectedLocation.length - 1 : prev - 1
+    );
+  }, [selectedLocation]);
+
+  // Escape to close and arrow keys to page through, matching the on-screen
+  // controls. Also locks background scroll -- the modal covers the viewport, so
+  // scrolling the page underneath it just loses your place.
+  useEffect(() => {
+    if (!modalOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleModalClose();
+      } else if (e.key === 'ArrowRight') {
+        handleNextPhoto();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrevPhoto();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [modalOpen, handleModalClose, handleNextPhoto, handlePrevPhoto]);
 
   const handleRecentPhotoClick = (photo: Photo) => {
     // Find if this photo is already in a group, or create a single photo group
@@ -260,9 +285,10 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                           onClick={() => handlePhotoClick(index)}
                         >
                           <div className="relative">
-                            <img
+                            <PhotoImage
                               src={photo.file_url}
                               alt={photo.title || 'Photo'}
+                              width={400}
                               className="w-full h-48 object-cover rounded-lg mb-3 hover:opacity-90 transition-opacity"
                             />
 
@@ -276,7 +302,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                               <p className="text-xs text-slate-500">{photo.description}</p>
                             )}
                             <p className="text-xs text-slate-400">
-                              {new Date(photo.created_at).toLocaleDateString()}
+                              {photoDate(photo)}
                             </p>
                           </div>
                         </div>
@@ -305,16 +331,17 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                 Recent Photos ({photos.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {photos.slice(0, 6).map((photo) => (
+                {(showAllPhotos ? photos : photos.slice(0, 6)).map((photo) => (
                   <div
                     key={photo.id}
                     className="bg-slate-50 rounded-xl overflow-hidden cursor-pointer hover:bg-slate-100 transition-colors border border-slate-100"
                     onClick={() => handleRecentPhotoClick(photo)}
                   >
                     <div className="relative">
-                      <img
+                      <PhotoImage
                         src={photo.file_url}
                         alt={photo.title}
+                        width={600}
                         className="w-full h-48 object-cover"
                       />
 
@@ -332,6 +359,18 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                   </div>
                 ))}
               </div>
+              {photos.length > 6 && (
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => setShowAllPhotos((prev) => !prev)}
+                    className={button('secondary', 'md')}
+                  >
+                    {showAllPhotos
+                      ? 'Show fewer'
+                      : `Show all ${photos.length} photos`}
+                  </button>
+                </div>
+              )}
             </Card>
           )}
 
@@ -354,7 +393,11 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
       {/* Fullscreen Modal */}
       {modalOpen && selectedLocation && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Photo ${currentPhotoIndex + 1} of ${selectedLocation.length}`}
           className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[9999]"
+          onClick={handleModalClose}
           style={{
             margin: 0,
             padding: 0,
@@ -366,9 +409,11 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
           {/* Close Button */}
           <button
             onClick={handleModalClose}
-            className="absolute top-4 right-4 text-white hover:text-slate-300 transition-colors z-10"
+            aria-label="Close photo viewer"
+            autoFocus
+            className="absolute top-4 right-4 text-white hover:text-slate-300 transition-colors z-10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -377,18 +422,26 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
           {selectedLocation.length > 1 && (
             <>
               <button
-                onClick={handlePrevPhoto}
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrevPhoto();
+                }}
+                aria-label="Previous photo"
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
               <button
-                onClick={handleNextPhoto}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNextPhoto();
+                }}
+                aria-label="Next photo"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -396,7 +449,10 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
           )}
 
           {/* Photo Display */}
-          <div className="relative w-full h-full flex items-center justify-center p-8">
+          <div
+            className="relative w-full h-full flex items-center justify-center p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
             <img
               src={selectedLocation[currentPhotoIndex].file_url}
               alt={selectedLocation[currentPhotoIndex].title || 'Photo'}
@@ -421,7 +477,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                     </p>
                   )}
                   <p className="text-xs text-slate-400">
-                    {new Date(selectedLocation[currentPhotoIndex].created_at).toLocaleDateString()}
+                    {photoDate(selectedLocation[currentPhotoIndex])}
                   </p>
                 </div>
                 {selectedLocation.length > 1 && (
