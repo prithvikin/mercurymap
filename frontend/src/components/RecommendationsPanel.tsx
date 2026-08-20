@@ -5,6 +5,8 @@ import {
   recommendationService,
   Recommendation,
 } from '../services/recommendationService.ts';
+import Card from './ui/Card.tsx';
+import { button } from './ui/buttonStyles.ts';
 
 interface RecommendationsPanelProps {
   photoCount: number;
@@ -43,32 +45,37 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
     !data.needsMorePhotos;
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-          <Sparkles className="h-6 w-6 mr-2 text-blue-600" />
-          Where to next?
-        </h2>
+    <Card className="p-6">
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center">
+            <Sparkles className="h-5 w-5 mr-2 text-indigo-600" />
+            Where to next?
+          </h2>
+          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
+            AI-generated
+          </span>
+        </div>
         {data && !data.needsMorePhotos && (
           <button
             onClick={() => fetchRecommendations(true)}
             disabled={loading}
-            className="flex items-center text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+            className={button('ghost', 'sm')}
           >
-            <RefreshCw className="h-4 w-4 mr-1" />
+            <RefreshCw className="h-4 w-4" />
             Refresh
           </button>
         )}
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
           {error}
         </div>
       )}
 
       {isStale && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded mb-4 text-sm">
+        <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl mb-4 text-sm">
           You've added photos since this was generated. Refresh for an updated
           suggestion.
         </div>
@@ -76,19 +83,19 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
 
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
       )}
 
       {!loading && !data && (
         <div className="text-center py-8">
-          <p className="text-gray-600 mb-4">
+          <p className="text-slate-600 mb-4">
             Based on the places you've photographed, get suggestions for where to
             travel next.
           </p>
           <button
             onClick={() => fetchRecommendations(false)}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className={button('primary', 'md')}
           >
             Suggest destinations
           </button>
@@ -97,8 +104,8 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
 
       {!loading && data?.needsMorePhotos && (
         <div className="text-center py-8">
-          <MapPin className="h-10 w-10 mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-600">
+          <MapPin className="h-10 w-10 mx-auto text-slate-300 mb-3" />
+          <p className="text-slate-600">
             Upload at least {data.required} photos with locations and we can start
             spotting what kind of travel you like.
           </p>
@@ -107,12 +114,12 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
 
       {!loading && data?.suggestions && (
         <>
-          <p className="text-gray-700 mb-5">{data.intro}</p>
+          <p className="text-slate-700 mb-5">{data.intro}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.suggestions.map((suggestion) => (
               <div
                 key={`${suggestion.place}-${suggestion.country}`}
-                className="bg-gray-50 rounded-lg p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                className="bg-slate-50 border border-slate-100 rounded-xl p-4 cursor-pointer hover:bg-slate-100 transition-colors"
                 onClick={() =>
                   onSelectPlace({
                     lat: suggestion.latitude,
@@ -121,20 +128,27 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                   })
                 }
               >
-                <h3 className="font-semibold text-gray-900 mb-1">
+                <h3 className="font-semibold text-slate-900 mb-1">
                   {suggestion.place}
                 </h3>
-                <div className="flex items-center text-sm text-gray-600 mb-2">
+                <div className="flex items-center text-sm text-slate-500 mb-2">
                   <MapPin className="h-4 w-4 mr-1" />
                   {suggestion.country}
                 </div>
-                <p className="text-sm text-gray-500">{suggestion.reason}</p>
+                <p className="text-sm text-slate-500">{suggestion.reason}</p>
               </div>
             ))}
           </div>
+          <p className="mt-5 pt-4 border-t border-slate-100 text-xs text-slate-400 flex items-start gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 mt-px flex-shrink-0" />
+            <span>
+              Created with AI based on the places you've photographed.
+              Suggestions may not always be accurate.
+            </span>
+          </p>
         </>
       )}
-    </div>
+    </Card>
   );
 };
 
