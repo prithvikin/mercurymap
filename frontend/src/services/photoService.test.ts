@@ -25,11 +25,16 @@ describe('photoService.getAllPhotos', () => {
     const result = await photoService.getAllPhotos();
 
     expect(mockSupabase.queries[0].table).toBe('photos');
-    expect(chainOf(mockSupabase)).toEqual([
-      ['select', '*'],
+    const chain = chainOf(mockSupabase);
+    expect(chain).toEqual([
+      ['select', expect.stringContaining('latitude, longitude')],
       ['is', 'user_id', null],
       ['order', 'created_at', { ascending: false }],
     ]);
+    // Explicitly not select('*'). add_semantic_search.sql adds a 384-float
+    // embedding column to this table, and a wildcard select would drag it into
+    // every map load and photo grid.
+    expect(chain[0][1]).not.toBe('*');
     expect(result).toEqual(rows);
   });
 });
