@@ -7,6 +7,7 @@ import Landing from './pages/Landing.tsx';
 import Home from './pages/Home.tsx';
 import PhotoUpload from './pages/PhotoUpload.tsx';
 import Login from './pages/Login.tsx';
+import NotFound from './pages/NotFound.tsx';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/app" element={<Home />} />
         <Route path="/public" element={<Home showPublicMap={true} />} />
         <Route path="/upload" element={<PhotoUpload />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster position="top-right" />
       <Analytics />
