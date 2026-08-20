@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+// No file extension: this directory compiles with TypeScript 4.7 + node
+// resolution, which rejects explicit .ts extensions in imports.
+import { logCall } from './_observability';
 
 // Same reasoning as /api/recommendations.ts: below this there isn't enough
 // signal in the community's public photos to say anything, so don't spend a
@@ -18,6 +21,9 @@ const MAX_LOCATIONS = 50;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const CACHE_ROW_ID = 'global';
+
+// Named so telemetry and the API call can't drift apart.
+const MODEL = 'claude-opus-5';
 
 interface Suggestion {
   place: string;
@@ -81,6 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const startedAt = Date.now();
   const { ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
   if (!ANTHROPIC_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = (
@@ -136,6 +143,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .maybeSingle();
 
     if (cached && Date.now() - new Date(cached.created_at).getTime() < CACHE_TTL_MS) {
+      const ageMs = Date.now() - new Date(cached.created_at).getTime();
+      logCall({
+        endpoint: 'community-recommendations',
+        model: MODEL,
+        cacheHit: true,
+        latencyMs: Date.now() - startedAt,
+        outcome: 'ok',
+        meta: { cacheAgeMs: ageMs, locations: locations.length },
+      });
       return res.status(200).json({ ...cached, cached: true });
     }
 
@@ -151,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
     const message = await anthropic.messages.create({
-      model: 'claude-opus-5',
+      model: MODEL,
       max_tokens: 4096,
       thinking: { type: 'adaptive' },
       output_config: {
@@ -215,6 +231,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('Failed to cache community recommendations:', writeError.message);
     }
 
+    logCall({
+      endpoint: 'community-recommendations',
+      model: MODEL,
+      cacheHit: false,
+      latencyMs: Date.now() - startedAt,
+      usage: message.usage,
+      outcome: 'ok',
+      meta: { locations: locations.length, suggestions: result.suggestions.length },
+    });
+
     return res.status(200).json({
       intro: result.intro,
       suggestions: result.suggestions,
@@ -223,6 +249,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (err) {
     console.error('Community recommendation generation failed:', err);
+    logCall({
+      endpoint: 'community-recommendations',
+      model: MODEL,
+      cacheHit: false,
+      latencyMs: Date.now() - startedAt,
+      outcome: 'model_error',
+    });
     return res.status(500).json({ error: 'Could not generate recommendations' });
   }
 }
