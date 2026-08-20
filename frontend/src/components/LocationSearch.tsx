@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { AlertCircle } from 'lucide-react';
+import {
+  geocoderErrorMessage,
+  GEOCODER_NETWORK_ERROR,
+} from '../lib/geocoderError.ts';
 
 interface Location {
   formatted: string;
@@ -21,30 +26,46 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
   const [value, setValue] = useState('');
   const [suggestions, setSuggestions] = useState<Location[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searched, setSearched] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   const searchLocations = async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setSuggestions([]);
+      setError(null);
+      setSearched(false);
       return;
     }
 
     setLoading(true);
+    setError(null);
     try {
       // Using OpenCage Geocoding API
       const response = await fetch(
         `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&limit=5&key=${process.env.REACT_APP_OPENCAGE_API_KEY}`
       );
-      const data = await response.json();
-      
-      if (data.results) {
-        setSuggestions(data.results);
+
+      // A rejected key comes back as a normal response, not a thrown error, so
+      // without this check the failure looks identical to "no matches".
+      if (!response.ok) {
+        console.error(
+          `OpenCage geocoding failed: ${response.status} ${response.statusText}`
+        );
+        setSuggestions([]);
+        setError(geocoderErrorMessage(response.status));
+        return;
       }
+
+      const data = await response.json();
+      setSuggestions(data.results ?? []);
     } catch (error) {
       console.error('Error fetching locations:', error);
       setSuggestions([]);
+      setError(GEOCODER_NETWORK_ERROR);
     } finally {
       setLoading(false);
+      setSearched(true);
     }
   };
 
@@ -127,6 +148,8 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
           // Delay hiding suggestions to allow for clicks
           setTimeout(() => {
             setSuggestions([]);
+            setError(null);
+            setSearched(false);
             setHighlightedIndex(-1);
           }, 200);
         }}
@@ -153,6 +176,25 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && error && (
+        <div
+          role="status"
+          className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-red-200 rounded-xl shadow-lg px-3 py-2 flex items-start gap-2"
+        >
+          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-red-700">{error}</span>
+        </div>
+      )}
+
+      {!loading && !error && searched && suggestions.length === 0 && (
+        <div
+          role="status"
+          className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2"
+        >
+          <span className="text-sm text-slate-500">No matching places found.</span>
         </div>
       )}
 

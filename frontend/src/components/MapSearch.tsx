@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, AlertCircle } from 'lucide-react';
+import {
+  geocoderErrorMessage,
+  GEOCODER_NETWORK_ERROR,
+} from '../lib/geocoderError.ts';
 
 interface MapboxFeature {
   id: string;
@@ -48,30 +52,46 @@ const MapSearch: React.FC<MapSearchProps> = ({
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<MapboxFeature[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searched, setSearched] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   const searchLocations = async (searchQuery: string) => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
       setSuggestions([]);
+      setError(null);
+      setSearched(false);
       return;
     }
 
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${process.env.REACT_APP_MAPBOX_TOKEN}&limit=5&types=place,country,region`
       );
-      const data = await response.json();
-      
-      if (data.features) {
-        setSuggestions(data.features);
+
+      // A rejected token comes back as a normal response, not a thrown error,
+      // so without this check the failure looks identical to "no matches".
+      if (!response.ok) {
+        console.error(
+          `Mapbox geocoding failed: ${response.status} ${response.statusText}`
+        );
+        setSuggestions([]);
+        setError(geocoderErrorMessage(response.status));
+        return;
       }
+
+      const data = await response.json();
+      setSuggestions(data.features ?? []);
     } catch (error) {
       console.error('Error searching locations:', error);
       setSuggestions([]);
+      setError(GEOCODER_NETWORK_ERROR);
     } finally {
       setLoading(false);
+      setSearched(true);
     }
   };
 
@@ -161,6 +181,24 @@ const MapSearch: React.FC<MapSearchProps> = ({
               </div>
             </button>
           ))}
+        </div>
+      )}
+      {showSuggestions && !loading && error && (
+        <div
+          role="status"
+          className="absolute z-10 w-full mt-1 bg-white border border-red-200 rounded-xl shadow-lg px-3 py-2 flex items-start gap-2"
+        >
+          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-red-700">{error}</span>
+        </div>
+      )}
+
+      {showSuggestions && !loading && !error && searched && suggestions.length === 0 && (
+        <div
+          role="status"
+          className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2"
+        >
+          <span className="text-sm text-slate-500">No matching places found.</span>
         </div>
       )}
     </div>
