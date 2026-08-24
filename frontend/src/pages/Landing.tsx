@@ -31,7 +31,7 @@ const Landing: React.FC = () => {
               Your Travel Memories,<span className="text-indigo-600"> Mapped</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto text-pretty">
-              Your photos belong on a map, not lost in a camera roll. See every trip you’ve taken —
+              Your photos belong on a map, not lost in a camera roll. See every trip you've taken
               and exactly where each memory happened.
             </p>
 
@@ -70,7 +70,7 @@ const Landing: React.FC = () => {
         </section>
 
         {/* Features Section */}
-        <section aria-labelledby="features-heading" className="py-20 bg-slate-50 border-y border-slate-100">
+        <section aria-labelledby="features-heading" className="py-10 bg-slate-50 border-y border-slate-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2
@@ -129,7 +129,7 @@ const Landing: React.FC = () => {
         </section>
 
         {/* CTA Section */}
-        <section aria-labelledby="cta-heading" className="py-20 bg-white">
+        <section aria-labelledby="cta-heading" className="pt-10 pb-20 bg-white">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-indigo-600 rounded-3xl px-8 py-14 text-center">
               <h2
