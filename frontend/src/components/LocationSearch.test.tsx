@@ -12,7 +12,7 @@ describe('LocationSearch', () => {
   });
 
   function searchFor(query: string) {
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: query } });
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: query } });
     act(() => {
       jest.advanceTimersByTime(300);
     });
