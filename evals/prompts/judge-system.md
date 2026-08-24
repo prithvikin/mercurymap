@@ -20,7 +20,7 @@ Evaluate each suggestion's `reason` and record a per-reason result in `reason_ch
 - 1 per reason: plausibly related but does not reference anything concrete from the input.
 - 0 per reason: could be attached to any traveller; pure marketing copy about the destination.
 
-Set `reason_grounding_score` to the rounded-down mean of the per-reason scores.
+Set `reason_grounding_score` to the mean of the per-reason scores, rounded to nearest. The runner recomputes this field and `overall_score` from your per-reason scores, so grade each reason carefully; the aggregates are not where your judgement is read.
 
 ## 3. tone_score — is the register right?
 

@@ -240,15 +240,34 @@ export function validateJudgeResult(rawJudge, expectedReasonCount = null) {
       && item.note.trim().length > 0
   ));
   checks.push(check('judge reason check schema', reasonChecksValid, 'each reason check has score 0-2 and a non-empty note'));
-  if (reasonChecksValid) {
-    const reasonMean = Math.floor(reasonChecks.reduce((sum, item) => sum + item.score, 0) / reasonChecks.length);
-    checks.push(check('judge reason score arithmetic', value.reason_grounding_score === reasonMean, `reason_grounding_score must equal the rounded-down mean (${reasonMean})`));
-  }
   const scoreDimensionsValid = scoreFields.every((field) => Number.isInteger(value?.[field]));
-  if (scoreDimensionsValid) {
-    const expectedOverall = scoreFields.reduce((sum, field) => sum + value[field], 0);
-    checks.push(check('judge overall score arithmetic', value.overall_score === expectedOverall, `overall_score must equal dimension sum (${expectedOverall})`));
-  }
   checks.push(check('judge explanation', typeof value?.explanation === 'string' && value.explanation.trim().length > 0, 'explanation must be non-empty text'));
-  return { passed: checks.every((item) => item.passed), checks, value };
+
+  // The judge grades each reason and explains itself -- what it is actually
+  // good at -- but it does not do the arithmetic over those grades. Two
+  // consecutive live runs returned reason_grounding_score 1 for [2,2,0,0,0],
+  // failing an otherwise sound case on a rounding disagreement rather than on
+  // output quality. The runner derives the aggregates instead.
+  //
+  // Rounding is to nearest, not down. Flooring made mixed quality score worse
+  // than uniform mediocrity: [2,2,0,0,0] floored to 0 while [1,1,1,1,1] gave 1,
+  // so two excellent reasons plus three weak ones was penalised harder than
+  // five forgettable ones.
+  let scored = value;
+  if (reasonChecksValid && scoreDimensionsValid) {
+    const mean = reasonChecks.reduce((sum, item) => sum + item.score, 0) / reasonChecks.length;
+    const reasonScore = Math.round(mean);
+    scored = {
+      ...value,
+      reason_grounding_score: reasonScore,
+      overall_score: value.intro_pattern_score + reasonScore + value.tone_score,
+      // Kept so the report still shows what the judge itself claimed.
+      judgeReported: {
+        reason_grounding_score: value.reason_grounding_score,
+        overall_score: value.overall_score,
+      },
+    };
+  }
+
+  return { passed: checks.every((item) => item.passed), checks, value: scored };
 }

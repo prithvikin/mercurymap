@@ -83,6 +83,10 @@ The judge is intentionally separate from deterministic validation. It receives t
 - `explanation` — evidence for the score; and
 - `reason_checks` — one score and note per reason.
 
+**The runner derives `reason_grounding_score` and `overall_score` rather than trusting the judge's own arithmetic.** The judge grades each reason and explains itself — what it is genuinely good at — but two consecutive live runs returned `reason_grounding_score: 1` for per-reason scores of `[2, 2, 0, 0, 0]`, failing an otherwise sound case on a rounding disagreement instead of on output quality. The aggregate is now computed from `reason_checks` as the mean rounded to nearest, and `overall_score` as the sum of the three dimensions. What the judge itself claimed is preserved under `judgeReported` in the report.
+
+Rounding is to nearest rather than down, because flooring made mixed quality score worse than uniform mediocrity: `[2, 2, 0, 0, 0]` floored to `0` while `[1, 1, 1, 1, 1]` gave `1`, penalising two excellent reasons plus three weak ones harder than five forgettable ones. Genuinely ungrounded output still fails — `[0, 0, 0, 0, 0]` scores `0` and trips the per-dimension gate.
+
 The rubric is in `evals/prompts/judge-system.md`; the case template is in `evals/prompts/judge-user.md`. Keeping prompts in files makes changes reviewable and prevents an unnoticed inline prompt drift. The runner applies a quality gate of `overall_score >= 4/6` and at least `1/2` on each dimension. The offline judge JSON files are golden fixtures for deterministic CI; they demonstrate report plumbing, while the live pass is the meaningful quality measurement.
 
 ## Reading the report
