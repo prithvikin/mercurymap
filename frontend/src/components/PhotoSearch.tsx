@@ -74,11 +74,17 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
   return (
     <section aria-labelledby="photo-search-heading" className="space-y-5">
       <div>
-        <div className="flex items-center gap-2">
-          <Search className="h-5 w-5 text-indigo-600" aria-hidden="true" />
-          <h2 id="photo-search-heading" className="text-xl font-bold text-slate-900">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h2
+            id="photo-search-heading"
+            className="text-xl font-bold text-slate-900 flex items-center"
+          >
+            <Search className="h-5 w-5 mr-2 text-indigo-600" aria-hidden="true" />
             Search public photos
           </h2>
+          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
+            AI-assisted
+          </span>
         </div>
         <p className="mt-1 text-sm text-slate-500">
           Describe a place, mood, activity, or time and we’ll find matching public photos.
