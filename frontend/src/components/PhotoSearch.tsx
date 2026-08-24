@@ -26,7 +26,7 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
   // Mood-and-activity prompts ("sunset beaches") return nothing until photos
   // carry descriptions to match against, since tsv is built from title,
   // country, and description -- never from the image itself.
-  placeholder = 'Try “espania” or "inca"',
+  placeholder = 'Try "espania" or "inca"',
 }) => {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<PhotoSearchResult | null>(null);
