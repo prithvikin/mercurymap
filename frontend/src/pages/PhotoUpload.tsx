@@ -12,8 +12,6 @@ import Card from '../components/ui/Card.tsx';
 import Spinner from '../components/ui/Spinner.tsx';
 import { button, focusRing } from '../components/ui/buttonStyles.ts';
 
-const PUBLIC_MAP_OWNER = 'mercurymap725@gmail.com';
-
 // Coordinates are numbers in a fixed-precision column, so they get the reader's
 // decimal separator rather than a hardcoded "12.3456".
 const coordFormat = new Intl.NumberFormat(undefined, {
@@ -46,8 +44,6 @@ const PhotoUpload: React.FC = () => {
   const [uploadToPublic, setUploadToPublic] = useState(false);
   const [errors, setErrors] = useState<{ file?: string; location?: string }>({});
   const navigate = useNavigate();
-
-  const isPublicMapOwner = user?.email === PUBLIC_MAP_OWNER;
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -106,6 +102,15 @@ const PhotoUpload: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Every insert policy requires auth.uid() IS NOT NULL (see
+    // supabase/policies.sql) -- a signed-out request has auth.uid() = NULL
+    // and always fails RLS. The submit button is disabled for this case too;
+    // this guard covers a stale enabled button or an Enter-key submit.
+    if (!user) {
+      toast.error('Sign in to upload photos.');
+      return;
+    }
+
     const nextErrors: { file?: string; location?: string } = {};
     if (!selectedFile) {
       nextErrors.file = 'Choose a photo to upload — drag one in or click to browse.';
@@ -134,7 +139,7 @@ const PhotoUpload: React.FC = () => {
         selectedLocation!.lat,
         selectedLocation!.lng,
         formData.taken_date || null,
-        (isPublicMapOwner && uploadToPublic) ? undefined : user?.id
+        uploadToPublic ? undefined : user.id
       );
 
       toast.success('Photo uploaded successfully.');
@@ -150,11 +155,9 @@ const PhotoUpload: React.FC = () => {
     }
   };
 
-  const destination = user
-    ? isPublicMapOwner && uploadToPublic
-      ? 'the Public'
-      : 'Your Private'
-    : 'the Public';
+  // Only meaningful once signed in -- a signed-out visitor has no valid
+  // destination at all, public or private (see the RLS note in handleSubmit).
+  const destination = uploadToPublic ? 'the Public' : 'Your Private';
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -164,7 +167,15 @@ const PhotoUpload: React.FC = () => {
         <Card className="p-6 sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <h1 className="text-xl font-bold text-slate-900 text-balance">
-              Upload Photo to {destination} <span translate="no">MercuryMap</span>
+              {user ? (
+                <>
+                  Upload Photo to {destination} <span translate="no">MercuryMap</span>
+                </>
+              ) : (
+                <>
+                  Sign In to Upload a Photo to <span translate="no">MercuryMap</span>
+                </>
+              )}
             </h1>
             {user && (
               <div className="flex items-center gap-2 text-sm text-slate-500 min-w-0">
@@ -174,7 +185,7 @@ const PhotoUpload: React.FC = () => {
             )}
           </div>
 
-          {isPublicMapOwner && (
+          {user && (
             <div className="mb-4">
               <label htmlFor="upload-to-public" className="inline-flex items-center cursor-pointer">
                 <input
@@ -193,20 +204,16 @@ const PhotoUpload: React.FC = () => {
                 </span>
               </label>
               <p id="upload-to-public-hint" className="text-xs text-slate-500 mt-1">
-                Only you can upload to the public map. Leave it unchecked to use your private map.
+                Visible to everyone on the public map. Leave it unchecked to keep this in your own
+                private map.
               </p>
             </div>
           )}
 
-          {user && !isPublicMapOwner && (
-            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-              <p className="text-sm text-amber-800">Your uploads will go to your private map.</p>
-            </div>
-          )}
           {!user && (
             <div className="mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
               <p className="text-sm text-indigo-800 mb-2">
-                Sign in to upload to your private map.
+                Sign in to upload photos. Uploads aren’t possible while signed out.
               </p>
               <Link
                 to="/login"
@@ -357,11 +364,12 @@ const PhotoUpload: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              {/* Enabled until the request starts: a missing photo or location
-                  gets an inline message, not a button that does nothing. */}
+              {/* Enabled until the request starts (a missing photo or location
+                  gets an inline message, not a button that does nothing) --
+                  except while signed out, which can never pass RLS. */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !user}
                 className={button('primary', 'lg', 'flex-1')}
               >
                 {loading ? (
@@ -369,8 +377,10 @@ const PhotoUpload: React.FC = () => {
                     <Spinner label="Uploading your photo…" className="h-4 w-4" />
                     <span>Uploading…</span>
                   </>
-                ) : (
+                ) : user ? (
                   <span>Upload Photo</span>
+                ) : (
+                  <span>Sign In to Upload</span>
                 )}
               </button>
               <button
