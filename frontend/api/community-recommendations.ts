@@ -79,6 +79,7 @@ Rules:
 - Each "reason" is a single sentence tying the suggestion to something concrete in the community's photos.
 - Latitude and longitude must be the real coordinates of the place you name, since the app drops a map pin there.
 - Prefer specific places -- a city, region, or national park -- over whole countries.
+- "place" is exactly one destination and nothing else: no conjunctions, no lists, and no comma-separated region, prefecture, or country. Write "Hiroshima", not "Hiroshima and Miyajima"; "Palermo", not "Palermo, Sicily"; "Stone Town", not "Stone Town, Zanzibar, Tanzania". The country belongs in "country" alone.
 - If the photos are thin or scattered with no clear pattern, say so honestly in the intro and suggest broadly appealing places rather than inventing a theme.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
