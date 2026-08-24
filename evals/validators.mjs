@@ -26,6 +26,41 @@ function parseJson(value) {
   }
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * A suggestion becomes exactly one map pin, so `place` must name exactly one
+ * place. The first live run returned "Hiroshima and Miyajima",
+ * "Stone Town, Zanzibar, Tanzania", and "Kyoto Prefecture's Miyama & the
+ * Kumano Kodo, Wakayama, Japan" -- each of which pins a single coordinate for
+ * two or more destinations, and the last of which buries the country inside
+ * `place` while `country` is already its own field.
+ *
+ * Conjunctions and commas are the reliable signals. The `and` rule can in
+ * principle reject a legitimate name ("Trinidad and Tobago"), but that is a
+ * country rather than a destination pin, so the trade is worth it.
+ */
+function isSinglePlace(place, country) {
+  if (typeof place !== 'string') return false;
+  const trimmed = place.trim();
+  if (trimmed.length === 0) return false;
+  if (trimmed.includes('&')) return false;
+  if (/\band\b/i.test(trimmed)) return false;
+  if (trimmed.includes(',')) return false;
+  if (typeof country === 'string' && country.trim().length > 0) {
+    // A city-state legitimately repeats its country as the place (Singapore,
+    // Monaco, Vatican City). Only reject the country appearing ALONGSIDE other
+    // text, which is the "Stone Town, Zanzibar, Tanzania" shape.
+    const sameName = trimmed.toLowerCase() === country.trim().toLowerCase();
+    if (!sameName && new RegExp(`\\b${escapeRegExp(country.trim())}\\b`, 'i').test(trimmed)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function historyPlaceKeys(history) {
   const keys = new Set();
   for (const photo of history ?? []) {
@@ -65,6 +100,15 @@ export function validateResponse(rawResponse, history, options = {}) {
   const endpoint = options.endpoint ?? 'personal';
   const expectedKind = options.expectedKind ?? 'recommendations';
   const expectedPhotoCount = options.expectedPhotoCount ?? (history?.length ?? 0);
+  // Fixture mode verifies against the offline gazetteer; the live pass injects
+  // a geocoder-backed resolver instead. See evals/geocoder.mjs for why.
+  const resolveReference = options.resolveReference ?? ((place, country) => {
+    const entry = lookupGazetteer(place, country);
+    return entry
+      ? { latitude: entry.latitude, longitude: entry.longitude, source: 'gazetteer' }
+      : null;
+  });
+  const referenceLabel = options.referenceLabel ?? `gazetteer tolerance: ${COORDINATE_TOLERANCE_DEGREES}°; unknown places are unverifiable`;
   const parsed = parseJson(rawResponse);
   const checks = [check('valid JSON', !parsed.error, parsed.error ?? 'parsed')];
 
@@ -95,6 +139,7 @@ export function validateResponse(rawResponse, history, options = {}) {
   let allCoordinatesMatch = true;
   let noDuplicates = true;
   let noHistoryRepeats = true;
+  let allSinglePlaces = true;
   const coordinateDetails = [];
 
   for (const suggestion of value.suggestions) {
@@ -130,7 +175,9 @@ export function validateResponse(rawResponse, history, options = {}) {
     const matchingInput = [...historyKeys].some((historyKey) => historyKey === normalizePlace(suggestion.place));
     noHistoryRepeats = noHistoryRepeats && !matchingInput;
 
-    const reference = lookupGazetteer(suggestion.place, suggestion.country);
+    allSinglePlaces = allSinglePlaces && isSinglePlace(suggestion.place, suggestion.country);
+
+    const reference = resolveReference(suggestion.place, suggestion.country);
     const coordinateOk = Boolean(reference)
       && rangeOk
       && Math.abs(suggestion.latitude - reference.latitude) <= COORDINATE_TOLERANCE_DEGREES
@@ -139,14 +186,17 @@ export function validateResponse(rawResponse, history, options = {}) {
     coordinateDetails.push({
       place: suggestion.place,
       country: suggestion.country,
-      reference: reference ? { latitude: reference.latitude, longitude: reference.longitude } : null,
+      reference: reference
+        ? { latitude: reference.latitude, longitude: reference.longitude, source: reference.source ?? 'gazetteer' }
+        : null,
       passed: coordinateOk,
     });
   }
 
   checks.push(check('suggestion item schema', allSuggestionSchemas, 'every item has exactly the required typed fields'));
   checks.push(check('coordinates in valid ranges', allCoordinatesInRange, 'latitude -90..90 and longitude -180..180'));
-  checks.push(check('coordinates match named places', allCoordinatesMatch, `gazetteer tolerance: ${COORDINATE_TOLERANCE_DEGREES}°; unknown places are unverifiable`));
+  checks.push(check('coordinates match named places', allCoordinatesMatch, referenceLabel));
+  checks.push(check('place names a single place', allSinglePlaces, 'place must be one destination: no commas, "and", "&", or the country name'));
   checks.push(check('no duplicate suggestions', noDuplicates, 'place + country keys must be unique'));
   checks.push(check('no suggestions repeat history', noHistoryRepeats, 'suggestions must be new places'));
 

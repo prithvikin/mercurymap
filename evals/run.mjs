@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateJudgeResult, validateResponse, summarizeChecks } from './validators.mjs';
 import { checkPromptSync } from './prompt-sync.mjs';
+import { geocoderApiKey, referenceKey, resolveSuggestions } from './geocoder.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CASES_DIR = path.join(HERE, 'cases');
@@ -236,7 +237,20 @@ async function main() {
   const caseFiles = fs.readdirSync(CASES_DIR).filter((name) => name.endsWith('.json')).sort();
   const cases = caseFiles.map((name) => readJson(path.join(CASES_DIR, name)));
   let client = null;
-  if (live) client = await createClient();
+  let opencageKey = null;
+  if (live) {
+    client = await createClient();
+    // Verified live, coordinates are checked against the same geocoder the app
+    // uses rather than the 41-entry gazetteer, which cannot cover the whole
+    // world the endpoints legitimately recommend from.
+    opencageKey = geocoderApiKey();
+    if (!opencageKey) {
+      throw new Error(
+        'Live mode requires OPENCAGE_API_KEY (or REACT_APP_OPENCAGE_API_KEY) to verify coordinates. ' +
+          'It is already in frontend/.env.local; pass it with --env-file.'
+      );
+    }
+  }
 
   const reportCases = [];
   let generationUsage = [];
@@ -263,12 +277,29 @@ async function main() {
       failureReasons.push(`generation: ${error instanceof Error ? error.message : String(error)}`);
     }
 
+    // The sentinel stays gazetteer-backed: it must fail offline and for
+    // reasons the runner controls, not because a geocoder happened to agree.
+    const useGeocoder = live && !expected.expectFailure && expected.kind === 'recommendations';
+    let referenceOptions = {};
+    if (useGeocoder && output?.suggestions) {
+      try {
+        const table = await resolveSuggestions(output.suggestions, opencageKey);
+        referenceOptions = {
+          resolveReference: (place, country) => table.get(referenceKey(place, country)) ?? null,
+          referenceLabel: 'OpenCage tolerance: 1°; places the geocoder cannot resolve are unverifiable',
+        };
+      } catch (error) {
+        failureReasons.push(`geocoding: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
     const deterministic = output === undefined
       ? { passed: false, checks: [], value: null }
       : validateResponse(output, testCase.history, {
         endpoint: testCase.endpoint,
         expectedKind: expected.kind,
         expectedPhotoCount: testCase.history.length,
+        ...referenceOptions,
       });
 
     if (!deterministic.passed) failureReasons.push(...summarizeChecks(deterministic));
