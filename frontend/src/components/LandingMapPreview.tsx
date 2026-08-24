@@ -47,10 +47,13 @@ const LandingMapPreview: React.FC = () => {
       .then((photos) => {
         if (!cancelled) setLocations(uniqueLocations(photos));
       })
-      .catch(() => {
+      .catch((error) => {
         // A broken preview shouldn't block the page -- fall back to the
         // static gradient panel below and let the real /public page surface
-        // the actual error.
+        // the actual error. Logged rather than swallowed: this is the one
+        // signal that would show whether the fetch itself failed versus
+        // something downstream, and there is no other surface for it.
+        console.error('Landing map preview: failed to load public photos', error);
         if (!cancelled) setLocations([]);
       });
     return () => {

@@ -143,26 +143,12 @@ const Landing: React.FC = () => {
                 everyone on the public one.
               </p>
               {user ? (
-                <Link
-                  to="/upload"
-                  className={button(
-                    'primary',
-                    'lg',
-                    'bg-white text-indigo-600 shadow-none hover:bg-indigo-50 active:bg-indigo-100 focus-visible:ring-white focus-visible:ring-offset-indigo-600'
-                  )}
-                >
+                <Link to="/upload" className={button('inverse', 'lg')}>
                   <Upload className="h-5 w-5" aria-hidden="true" />
                   <span>Upload a Photo</span>
                 </Link>
               ) : (
-                <Link
-                  to="/login"
-                  className={button(
-                    'primary',
-                    'lg',
-                    'bg-white text-indigo-600 shadow-none hover:bg-indigo-50 active:bg-indigo-100 focus-visible:ring-white focus-visible:ring-offset-indigo-600'
-                  )}
-                >
+                <Link to="/login" className={button('inverse', 'lg')}>
                   <LogIn className="h-5 w-5" aria-hidden="true" />
                   <span>Sign In to Get Started</span>
                 </Link>
