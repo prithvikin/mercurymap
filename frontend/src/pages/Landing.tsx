@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, Upload, ArrowRight, LogIn, Sparkles, Search, ShieldCheck } from 'lucide-react';
+import { Camera, Upload, ArrowRight, LogIn, MapPin, Sparkles, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import CommunityRecommendationsPanel from '../components/CommunityRecommendationsPanel.tsx';
 import NavBar from '../components/NavBar.tsx';
@@ -77,18 +77,31 @@ const Landing: React.FC = () => {
                 id="features-heading"
                 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 text-balance"
               >
-                Built on Claude, Not Just a Map
+                Maps Tell Better Travel Stories
               </h2>
               <p className="text-lg text-slate-600 max-w-2xl mx-auto text-pretty">
-                <span translate="no">MercuryMap</span> uses Claude for the parts that need judgment,
-                and checks its own homework before shipping.
+                From interactive maps to seamless photo sharing, <span translate="no">MercuryMap</span>{' '}
+                makes it easy to document and discover travel experiences worldwide.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="text-center p-8">
                 <div className="bg-indigo-50 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                  <Sparkles className="h-7 w-7 text-indigo-600" aria-hidden="true" />
+                  <MapPin className="h-7 w-7 text-indigo-600" aria-hidden="true" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2 text-balance">
+                  Interactive Mapping
+                </h3>
+                <p className="text-slate-600 text-sm text-pretty">
+                  Upload photos with precise location data and explore a beautiful interactive map
+                  powered by Mapbox with search and clustering features.
+                </p>
+              </Card>
+
+              <Card className="text-center p-8">
+                <div className="bg-emerald-50 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                  <Sparkles className="h-7 w-7 text-emerald-600" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-2 text-balance">
                   AI Trip Recommendations
@@ -96,19 +109,6 @@ const Landing: React.FC = () => {
                 <p className="text-slate-600 text-sm text-pretty">
                   Claude reads a photo history and suggests real destinations with map coordinates
                   and a grounded reason — checked against a live geocoder, not hallucinated.
-                </p>
-              </Card>
-
-              <Card className="text-center p-8">
-                <div className="bg-emerald-50 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                  <Search className="h-7 w-7 text-emerald-600" aria-hidden="true" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2 text-balance">
-                  Natural-Language Photo Search
-                </h3>
-                <p className="text-slate-600 text-sm text-pretty">
-                  Search "espania" or "Inca" and an LLM query parser expands it into keywords and
-                  filters, which Postgres full-text search actually retrieves against.
                 </p>
               </Card>
 
