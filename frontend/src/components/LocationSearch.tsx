@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { AlertCircle } from 'lucide-react';
+import Spinner from './ui/Spinner.tsx';
 import {
   geocoderErrorMessage,
   GEOCODER_NETWORK_ERROR,
@@ -20,15 +21,27 @@ interface Location {
 interface LocationSearchProps {
   onLocationSelect: (location: { lat: number; lng: number; city: string; country: string }) => void;
   placeholder?: string;
+  /** Id for the input so a caller's <label htmlFor> actually points at it. */
+  id?: string;
+  'aria-describedby'?: string;
 }
 
-const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, placeholder = "Search for a city or country..." }) => {
+const LocationSearch: React.FC<LocationSearchProps> = ({
+  onLocationSelect,
+  placeholder = 'Search for a city or country…',
+  id,
+  'aria-describedby': describedBy,
+}) => {
   const [value, setValue] = useState('');
   const [suggestions, setSuggestions] = useState<Location[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const generatedId = useId();
+  const inputId = id ?? `location-search-${generatedId}`;
+  const listboxId = `${inputId}-listbox`;
+  const optionId = (index: number) => `${inputId}-option-${index}`;
 
   const searchLocations = async (query: string) => {
     if (!query.trim() || query.length < 2) {
@@ -89,16 +102,17 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
   const handleSelect = (location: Location) => {
     const city = location.components.city || location.formatted.split(',')[0];
     const country = location.components.country || location.formatted.split(',').pop()?.trim();
-    
+
     onLocationSelect({
       lat: location.geometry.lat,
       lng: location.geometry.lng,
       city: city || '',
       country: country || ''
     });
-    
+
     setValue(location.formatted);
     setSuggestions([]);
+    setHighlightedIndex(-1);
   };
 
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -131,11 +145,25 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
     handleSelect(location);
   };
 
+  const expanded = suggestions.length > 0;
+
   return (
     <div className="relative">
       <input
         ref={inputRef}
+        id={inputId}
         type="text"
+        role="combobox"
+        aria-expanded={expanded}
+        aria-controls={listboxId}
+        aria-autocomplete="list"
+        aria-activedescendant={
+          highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined
+        }
+        aria-describedby={describedBy}
+        aria-label="Search for a location"
+        autoComplete="off"
+        spellCheck={false}
         value={value}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
@@ -153,38 +181,52 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
             setHighlightedIndex(-1);
           }, 200);
         }}
-        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         placeholder={placeholder}
       />
 
-      {suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-auto">
-          {suggestions.map((item, index) => (
-            <div
-              key={item.formatted}
-              className={`p-2 cursor-pointer ${
-                index === highlightedIndex ? 'bg-indigo-50' : 'bg-white'
-              } hover:bg-slate-50 border-b border-slate-100 last:border-b-0`}
-              onClick={() => handleSuggestionClick(item)}
-            >
-              <div className="font-medium text-slate-900">{item.formatted}</div>
-              <div className="text-sm text-slate-500">
-                {item.components.city && item.components.country
-                  ? `${item.components.city}, ${item.components.country}`
-                  : item.formatted
-                }
-              </div>
+      <ul
+        id={listboxId}
+        role="listbox"
+        aria-label="Location suggestions"
+        hidden={!expanded}
+        className="absolute top-full left-0 right-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-auto"
+      >
+        {suggestions.map((item, index) => (
+          <li
+            key={item.formatted}
+            id={optionId(index)}
+            role="option"
+            aria-selected={index === highlightedIndex}
+            // Focus stays in the input (this is an aria-activedescendant
+            // combobox), so mousedown is what commits a click -- blur would
+            // otherwise tear the list down before click fires.
+            onMouseDown={(event) => {
+              event.preventDefault();
+              handleSuggestionClick(item);
+            }}
+            onMouseEnter={() => setHighlightedIndex(index)}
+            className={`p-2 cursor-pointer ${
+              index === highlightedIndex ? 'bg-indigo-50' : 'bg-white'
+            } hover:bg-slate-50 border-b border-slate-100 last:border-b-0`}
+          >
+            <div className="font-medium text-slate-900 break-words">{item.formatted}</div>
+            <div className="text-sm text-slate-500 break-words">
+              {item.components.city && item.components.country
+                ? `${item.components.city}, ${item.components.country}`
+                : item.formatted
+              }
             </div>
-          ))}
-        </div>
-      )}
+          </li>
+        ))}
+      </ul>
 
       {!loading && error && (
         <div
           role="status"
           className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-red-200 rounded-xl shadow-lg px-3 py-2 flex items-start gap-2"
         >
-          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
           <span className="text-sm text-red-700">{error}</span>
         </div>
       )}
@@ -199,12 +241,12 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, place
       )}
 
       {loading && (
-        <div className="absolute right-3 top-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+        <div className="absolute right-3 top-2 text-indigo-600">
+          <Spinner label="Searching for locations…" className="h-4 w-4" />
         </div>
       )}
     </div>
   );
 };
 
-export default LocationSearch; 
+export default LocationSearch;

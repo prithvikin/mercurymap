@@ -6,6 +6,9 @@ import {
   Recommendation,
 } from '../services/recommendationService.ts';
 import Card from './ui/Card.tsx';
+import Spinner from './ui/Spinner.tsx';
+import SuggestionCard from './ui/SuggestionCard.tsx';
+import AiDisclaimer from './ui/AiDisclaimer.tsx';
 import { button } from './ui/buttonStyles.ts';
 
 interface RecommendationsPanelProps {
@@ -29,7 +32,7 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
       setData(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      setError(message);
+      setError(`${message} Try again in a moment.`);
       toast.error('Could not load recommendations');
     } finally {
       setLoading(false);
@@ -45,12 +48,15 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
     !data.needsMorePhotos;
 
   return (
-    <Card className="p-6">
+    <Card className="p-6" aria-labelledby="recommendations-heading">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h2 className="text-xl font-bold text-slate-900 flex items-center">
-            <Sparkles className="h-5 w-5 mr-2 text-indigo-600" />
-            Where to next?
+          <h2
+            id="recommendations-heading"
+            className="text-xl font-bold text-slate-900 flex items-center"
+          >
+            <Sparkles className="h-5 w-5 mr-2 text-indigo-600" aria-hidden="true" />
+            Where to Next?
           </h2>
           <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
             AI-generated
@@ -62,90 +68,84 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
             disabled={loading}
             className={button('ghost', 'sm')}
           >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            <span>Refresh</span>
           </button>
         )}
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
+        <div
+          role="alert"
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm"
+        >
           {error}
         </div>
       )}
 
       {isStale && (
-        <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl mb-4 text-sm">
-          You've added photos since this was generated. Refresh for an updated
-          suggestion.
+        <div
+          role="status"
+          className="bg-indigo-50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl mb-4 text-sm"
+        >
+          You’ve added photos since this was generated. Refresh for an updated suggestion.
         </div>
       )}
 
       {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="flex items-center justify-center py-12 text-indigo-600">
+          <Spinner label="Finding destinations for you…" className="h-12 w-12" />
         </div>
       )}
 
       {!loading && !data && (
         <div className="text-center py-8">
-          <p className="text-slate-600 mb-4">
-            Based on the places you've photographed, get suggestions for where to
-            travel next.
+          <p className="text-slate-600 mb-4 text-pretty">
+            Based on the places you’ve photographed, get suggestions for where to travel next.
           </p>
           <button
             onClick={() => fetchRecommendations(false)}
             className={button('primary', 'md')}
           >
-            Suggest destinations
+            Suggest Destinations
           </button>
         </div>
       )}
 
       {!loading && data?.needsMorePhotos && (
         <div className="text-center py-8">
-          <MapPin className="h-10 w-10 mx-auto text-slate-300 mb-3" />
-          <p className="text-slate-600">
-            Upload at least {data.required} photos with locations and we can start
-            spotting what kind of travel you like.
+          <MapPin className="h-10 w-10 mx-auto text-slate-300 mb-3" aria-hidden="true" />
+          <p className="text-slate-600 text-pretty">
+            Upload at least {data.required} photos with locations and we can start spotting what
+            kind of travel you like.
           </p>
         </div>
       )}
 
       {!loading && data?.suggestions && (
         <>
-          <p className="text-slate-700 mb-5">{data.intro}</p>
+          <p className="text-slate-700 mb-5 text-pretty">{data.intro}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.suggestions.map((suggestion) => (
-              <div
+              <SuggestionCard
                 key={`${suggestion.place}-${suggestion.country}`}
-                className="bg-slate-50 border border-slate-100 rounded-xl p-4 cursor-pointer hover:bg-slate-100 transition-colors"
-                onClick={() =>
+                place={suggestion.place}
+                country={suggestion.country}
+                reason={suggestion.reason}
+                onSelect={() =>
                   onSelectPlace({
                     lat: suggestion.latitude,
                     lng: suggestion.longitude,
                     name: suggestion.place,
                   })
                 }
-              >
-                <h3 className="font-semibold text-slate-900 mb-1">
-                  {suggestion.place}
-                </h3>
-                <div className="flex items-center text-sm text-slate-500 mb-2">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {suggestion.country}
-                </div>
-                <p className="text-sm text-slate-500">{suggestion.reason}</p>
-              </div>
+              />
             ))}
           </div>
-          <p className="mt-5 pt-4 border-t border-slate-100 text-xs text-slate-400 flex items-start gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 mt-px flex-shrink-0" />
-            <span>
-              Created with AI based on the places you've photographed.
-              Suggestions may not always be accurate.
-            </span>
-          </p>
+          <AiDisclaimer>
+            Created with AI based on the places you’ve photographed. Suggestions may not always be
+            accurate.
+          </AiDisclaimer>
         </>
       )}
     </Card>

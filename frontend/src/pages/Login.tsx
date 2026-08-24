@@ -1,85 +1,158 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { Camera, LogIn, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import NavBar from '../components/NavBar.tsx';
 import Card from '../components/ui/Card.tsx';
-import { button } from '../components/ui/buttonStyles.ts';
+import Spinner from '../components/ui/Spinner.tsx';
+import { button, focusRing } from '../components/ui/buttonStyles.ts';
+
+const inputClasses =
+  'block w-full px-3 py-2 border rounded-lg placeholder-slate-400 sm:text-sm ' +
+  'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Field-level errors render next to the input that caused them; the toast
+  // alone left the user hunting for which box was wrong.
+  const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  const validate = () => {
+    const next: { email?: string; password?: string } = {};
+    if (!email.trim()) {
+      next.email = 'Enter your email address.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      next.email = 'Enter a complete email address, like you@example.com.';
+    }
+    if (!password) {
+      next.password = 'Enter your password.';
+    } else if (isSignUp && password.length < 6) {
+      next.password = 'Use at least 6 characters for your password.';
+    }
+    return next;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const fieldErrors = validate();
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      // Focus the first field that failed so keyboard and screen-reader users
+      // land on the problem instead of the top of the form.
+      (fieldErrors.email ? emailRef : passwordRef).current?.focus();
+      return;
+    }
+
+    setErrors({});
     setLoading(true);
 
     try {
       if (isSignUp) {
         await signUp(email, password);
-        toast.success('Account created! Please check your email to verify your account.');
+        toast.success('Account created. Check your email to verify your account.');
       } else {
         await signIn(email, password);
-        toast.success('Signed in successfully!');
+        toast.success('Signed in successfully.');
         navigate('/app');
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Authentication failed');
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'We could not sign you in. Check your email and password, then try again.';
+      setErrors({ form: message });
+      toast.error(message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsSignUp((prev) => !prev);
+    setErrors({});
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
 
-      <div className="flex flex-col justify-center py-16 sm:px-6 lg:px-8">
+      <main id="main-content" className="flex flex-col justify-center py-16 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center">
             <div className="bg-indigo-100 p-3 rounded-2xl">
-              <Camera className="h-8 w-8 text-indigo-600" />
+              <Camera className="h-8 w-8 text-indigo-600" aria-hidden="true" />
             </div>
           </div>
-          <h2 className="mt-6 text-center text-2xl font-bold text-slate-900">
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
-          </h2>
+          <h1 className="mt-6 text-center text-2xl font-bold text-slate-900 text-balance">
+            {isSignUp ? 'Create Your Account' : 'Sign In to Your Account'}
+          </h1>
           <p className="mt-2 text-center text-sm text-slate-500">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+            {isSignUp ? 'Already have an account?' : 'Don’t have an account?'}{' '}
             <button
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              type="button"
+              onClick={toggleMode}
+              className={`rounded font-medium text-indigo-600 hover:text-indigo-500 hover:underline ${focusRing}`}
             >
-              {isSignUp ? 'Sign in' : 'Sign up'}
+              {isSignUp ? 'Sign In' : 'Sign Up'}
             </button>
           </p>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <Card className="p-8">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+          <Card className="p-6 sm:p-8">
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+              {errors.form && (
+                <div
+                  role="alert"
+                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                >
+                  {errors.form}
+                </div>
+              )}
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-                  Email address
+                  Email Address
                 </label>
                 <div className="mt-1">
                   <input
+                    ref={emailRef}
                     id="email"
                     name="email"
                     type="email"
+                    inputMode="email"
                     autoComplete="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full px-3 py-2 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Enter your email"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                    }}
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? 'email-error' : undefined}
+                    className={`${inputClasses} ${
+                      errors.email ? 'border-red-400' : 'border-slate-300'
+                    }`}
+                    placeholder="you@example.com"
                   />
                 </div>
+                {errors.email && (
+                  <p id="email-error" className="mt-1.5 text-sm text-red-600">
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -88,40 +161,62 @@ const Login: React.FC = () => {
                 </label>
                 <div className="mt-1">
                   <input
+                    ref={passwordRef}
                     id="password"
                     name="password"
                     type="password"
                     autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                    spellCheck={false}
                     required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full px-3 py-2 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Enter your password"
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    aria-invalid={Boolean(errors.password)}
+                    aria-describedby={
+                      errors.password ? 'password-error' : isSignUp ? 'password-hint' : undefined
+                    }
+                    className={`${inputClasses} ${
+                      errors.password ? 'border-red-400' : 'border-slate-300'
+                    }`}
+                    placeholder={isSignUp ? 'At least 6 characters' : 'Enter your password'}
                   />
                 </div>
+                {errors.password ? (
+                  <p id="password-error" className="mt-1.5 text-sm text-red-600">
+                    {errors.password}
+                  </p>
+                ) : (
+                  isSignUp && (
+                    <p id="password-hint" className="mt-1.5 text-xs text-slate-500">
+                      Use at least 6 characters.
+                    </p>
+                  )
+                )}
               </div>
 
               <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={button('primary', 'lg', 'w-full')}
-                >
+                {/* Stays enabled until the request actually starts -- an invalid
+                    form should explain itself, not present a dead button. */}
+                <button type="submit" disabled={loading} className={button('primary', 'lg', 'w-full')}>
                   {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <>
+                      <Spinner
+                        label={isSignUp ? 'Creating your account…' : 'Signing you in…'}
+                        className="h-4 w-4"
+                      />
+                      <span>{isSignUp ? 'Creating Account…' : 'Signing In…'}</span>
+                    </>
+                  ) : isSignUp ? (
+                    <>
+                      <UserPlus className="h-4 w-4" aria-hidden="true" />
+                      <span>Create Account</span>
+                    </>
                   ) : (
                     <>
-                      {isSignUp ? (
-                        <>
-                          <UserPlus className="h-4 w-4" />
-                          Sign up
-                        </>
-                      ) : (
-                        <>
-                          <LogIn className="h-4 w-4" />
-                          Sign in
-                        </>
-                      )}
+                      <LogIn className="h-4 w-4" aria-hidden="true" />
+                      <span>Sign In</span>
                     </>
                   )}
                 </button>
@@ -130,7 +225,7 @@ const Login: React.FC = () => {
 
             <div className="mt-6">
               <div className="relative">
-                <div className="absolute inset-0 flex items-center">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
                   <div className="w-full border-t border-slate-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
@@ -140,13 +235,13 @@ const Login: React.FC = () => {
 
               <div className="mt-6">
                 <Link to="/" className={button('secondary', 'lg', 'w-full')}>
-                  Continue without signing in
+                  Continue Without Signing In
                 </Link>
               </div>
             </div>
           </Card>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

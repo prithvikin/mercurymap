@@ -2,22 +2,25 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Map, { Marker } from 'react-map-gl';
 import { photoService } from '../services/photoService.ts';
 import { Photo } from '../lib/supabase.ts';
-import { Camera, MapPin, Upload, LogIn, RotateCcw } from 'lucide-react';
+import { Camera, MapPin, Upload, LogIn, RotateCcw, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
 import RecommendationsPanel from '../components/RecommendationsPanel.tsx';
 import CommunityRecommendationsPanel from '../components/CommunityRecommendationsPanel.tsx';
 import NavBar from '../components/NavBar.tsx';
 import PhotoImage from '../components/PhotoImage.tsx';
 import Card from '../components/ui/Card.tsx';
-import { button } from '../components/ui/buttonStyles.ts';
+import Spinner from '../components/ui/Spinner.tsx';
+import { button, focusRing } from '../components/ui/buttonStyles.ts';
 import { photoDate } from '../lib/photoDate.ts';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
 interface HomeProps {
   showPublicMap?: boolean;
 }
+
+const PREVIEW_COUNT = 6;
 
 const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   const { user, loading: authLoading } = useAuth();
@@ -27,8 +30,30 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   const [selectedLocation, setSelectedLocation] = useState<Photo[] | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [showAllPhotos, setShowAllPhotos] = useState(false);
   const mapRef = useRef<any>(null);
+  // The element that opened the modal, so focus can go back where it started.
+  const modalOpenerRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // "Show all" survives a reload and can be linked to, so it lives in the URL
+  // rather than in component state.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const showAllPhotos = searchParams.get('all') === '1';
+
+  const toggleShowAll = () => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (showAllPhotos) {
+          next.delete('all');
+        } else {
+          next.set('all', '1');
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  };
 
   // Initial map state for reset functionality
   const initialViewState = {
@@ -88,7 +113,11 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
       }
       setPhotos(data);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Unknown error');
+      setError(
+        error instanceof Error
+          ? `${error.message} Reload the page to try again.`
+          : 'We could not load photos. Reload the page to try again.'
+      );
       toast.error('Failed to load photos');
     } finally {
       setLoading(false);
@@ -113,7 +142,8 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
     setSelectedLocation(photos);
   };
 
-  const handlePhotoClick = (index: number) => {
+  const openModal = (index: number, opener: HTMLElement | null) => {
+    modalOpenerRef.current = opener;
     setCurrentPhotoIndex(index);
     setModalOpen(true);
   };
@@ -121,6 +151,8 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   const handleModalClose = useCallback(() => {
     setModalOpen(false);
     setCurrentPhotoIndex(0);
+    modalOpenerRef.current?.focus();
+    modalOpenerRef.current = null;
   }, []);
 
   const handleNextPhoto = useCallback(() => {
@@ -136,8 +168,9 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   }, [selectedLocation]);
 
   // Escape to close and arrow keys to page through, matching the on-screen
-  // controls. Also locks background scroll -- the modal covers the viewport, so
-  // scrolling the page underneath it just loses your place.
+  // controls. Tab is trapped inside the dialog, and background scroll is locked
+  // -- the modal covers the viewport, so scrolling underneath just loses your
+  // place.
   useEffect(() => {
     if (!modalOpen) return;
 
@@ -148,6 +181,18 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
         handleNextPhoto();
       } else if (e.key === 'ArrowLeft') {
         handlePrevPhoto();
+      } else if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>('button');
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
 
@@ -161,249 +206,291 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
     };
   }, [modalOpen, handleModalClose, handleNextPhoto, handlePrevPhoto]);
 
-  const handleRecentPhotoClick = (photo: Photo) => {
+  const handleRecentPhotoClick = (photo: Photo, opener: HTMLElement | null) => {
     // Find if this photo is already in a group, or create a single photo group
     const photoGroup = [photo];
     setSelectedLocation(photoGroup);
-    setCurrentPhotoIndex(0);
-    setModalOpen(true);
+    openModal(0, opener);
   };
+
+  const heading = showPublicMap || !user ? 'Public MercuryMap' : 'Your Private MercuryMap';
+  const blurb =
+    showPublicMap || !user
+      ? 'Click on the map markers to view public photos taken in different countries. Sign in to view your private map.'
+      : 'View your private travel photos on the map. Your photos are only visible to you.';
+
+  const visiblePhotos = showAllPhotos ? photos : photos.slice(0, PREVIEW_COUNT);
 
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
 
-      {loading ? (
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-        </div>
-      ) : (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-slate-900 mb-3">
-              {showPublicMap ? 'Public MercuryMap' : user ? 'Your Private MercuryMap' : 'Public MercuryMap'}
-            </h1>
-            <p className="text-slate-600 max-w-2xl mx-auto">
-              {showPublicMap
-                ? 'Click on the map markers to view public photos taken in different countries. Sign in to view your private map.'
-                : user
-                  ? 'View your private travel photos on the map. Your photos are only visible to you.'
-                  : 'Click on the map markers to view public photos taken in different countries. Sign in to view your private map.'
-              }
-            </p>
-            {!user && !showPublicMap && (
-              <div className="mt-4">
-                <Link to="/login" className={button('primary', 'md')}>
-                  <LogIn className="h-4 w-4" />
-                  <span>Sign In to View Your Private Map</span>
-                </Link>
+      <main id="main-content">
+        {loading ? (
+          <div className="flex items-center justify-center h-96 text-indigo-600">
+            <Spinner label="Loading photos…" className="h-12 w-12" />
+          </div>
+        ) : (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-slate-900 mb-3 text-balance">
+                <span translate="no">{heading}</span>
+              </h1>
+              <p className="text-slate-600 max-w-2xl mx-auto text-pretty">{blurb}</p>
+              {!user && !showPublicMap && (
+                <div className="mt-4">
+                  <Link to="/login" className={button('primary', 'md')}>
+                    <LogIn className="h-4 w-4" aria-hidden="true" />
+                    <span>Sign In to View Your Private Map</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div
+                role="alert"
+                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
+              >
+                <strong>Error:</strong> {error}
               </div>
             )}
-          </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-              <strong>Error:</strong> {error}
-            </div>
-          )}
-
-          <Card className="overflow-hidden">
-            <div className="flex" style={{ height: '600px' }}>
-              {/* Map Container - 75% width when sidebar is open, 100% when closed */}
-              <div className={`${selectedLocation ? 'w-3/4' : 'w-full'} relative transition-all duration-300`}>
-                {/* Map Search Overlay */}
-                <div className="absolute top-4 left-4 z-10">
-                  <MapSearch onLocationSelect={handleLocationSearch} />
-                </div>
-
-                {/* Reset Button */}
-                <div className="absolute top-4 right-4 z-10">
-                  <button
-                    onClick={handleResetMap}
-                    className={button('secondary', 'sm', 'bg-white shadow-card')}
-                    title="Reset map to world view"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>Reset</span>
-                  </button>
-                </div>
-
-                <Map
-                  ref={mapRef}
-                  {...viewState}
-                  onMove={evt => setViewState(evt.viewState)}
-                  style={{ width: '100%', height: '100%' }}
-                  mapStyle="mapbox://styles/mapbox/streets-v11"
-                  mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+            <Card className="overflow-hidden">
+              {/* Stacks on phones -- a 25% sidebar next to a map is unreadable
+                  below ~640px, and a hardcoded 600px was taller than a small
+                  viewport. */}
+              <div className="flex flex-col sm:flex-row h-[80vh] max-h-[600px] min-h-[420px]">
+                <div
+                  className={`${
+                    selectedLocation ? 'sm:w-3/4 h-1/2 sm:h-auto' : 'w-full'
+                  } relative transition-[width] duration-300`}
                 >
-                  {Object.entries(groupedPhotos).map(([key, photoGroup]) => {
-                    const firstPhoto = photoGroup[0];
-                    const isMultiple = photoGroup.length > 1;
+                  {/* Map Search Overlay */}
+                  <div className="absolute top-4 left-4 right-4 sm:right-auto z-10">
+                    <MapSearch onLocationSelect={handleLocationSearch} />
+                  </div>
 
-                    return (
-                      <Marker
-                        key={key}
-                        longitude={firstPhoto.longitude || 0}
-                        latitude={firstPhoto.latitude || 0}
-                        anchor="bottom"
-                        onClick={e => {
-                          e.originalEvent.stopPropagation();
-                          handleMarkerClick(photoGroup);
-                        }}
-                      >
-                        <div className={`${isMultiple ? 'w-8 h-8' : 'w-6 h-6'} bg-indigo-600 rounded-full border-2 border-white cursor-pointer flex items-center justify-center text-white text-xs font-bold shadow-card`}>
-                          {isMultiple ? photoGroup.length : ''}
-                        </div>
-                      </Marker>
-                    );
-                  })}
-                </Map>
-              </div>
+                  {/* Reset Button */}
+                  <div className="absolute bottom-4 right-4 sm:bottom-auto sm:top-4 z-10">
+                    <button
+                      onClick={handleResetMap}
+                      className={button('secondary', 'sm', 'bg-white shadow-card')}
+                    >
+                      <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                      <span>Reset</span>
+                    </button>
+                  </div>
 
-              {/* Sidebar - 25% width when open */}
-              {selectedLocation && (
-                <div className="w-1/4 bg-white border-l border-slate-200 overflow-y-auto">
-                  <div className="p-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-base font-semibold text-slate-900">
-                        {selectedLocation.length} Photo{selectedLocation.length > 1 ? 's' : ''} at this location
-                      </h3>
-                      <button
-                        onClick={() => setSelectedLocation(null)}
-                        className="text-slate-400 hover:text-slate-600 transition-colors"
-                      >
-                        ✕
-                      </button>
-                    </div>
+                  <Map
+                    ref={mapRef}
+                    {...viewState}
+                    onMove={evt => setViewState(evt.viewState)}
+                    style={{ width: '100%', height: '100%' }}
+                    mapStyle="mapbox://styles/mapbox/streets-v11"
+                    mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+                  >
+                    {Object.entries(groupedPhotos).map(([key, photoGroup]) => {
+                      const firstPhoto = photoGroup[0];
+                      const isMultiple = photoGroup.length > 1;
+                      const place = firstPhoto.country || 'this location';
 
-                    {/* Photo Display */}
-                    <div className="space-y-4">
-                      {selectedLocation.map((photo, index) => (
-                        <div
-                          key={photo.id}
-                          className="bg-slate-50 rounded-xl p-3 cursor-pointer hover:bg-slate-100 transition-colors border border-slate-100"
-                          onClick={() => handlePhotoClick(index)}
+                      return (
+                        <Marker
+                          key={key}
+                          longitude={firstPhoto.longitude || 0}
+                          latitude={firstPhoto.latitude || 0}
+                          anchor="bottom"
+                          onClick={e => {
+                            e.originalEvent.stopPropagation();
+                            handleMarkerClick(photoGroup);
+                          }}
                         >
-                          <div className="relative">
-                            <PhotoImage
-                              src={photo.file_url}
-                              alt={photo.title || 'Photo'}
-                              width={400}
-                              className="w-full h-48 object-cover rounded-lg mb-3 hover:opacity-90 transition-opacity"
-                            />
-
-                          </div>
-                          <div className="space-y-1">
-                            {photo.title && (
-                              <h4 className="font-semibold text-sm text-slate-900">{photo.title}</h4>
-                            )}
-                            <p className="text-xs text-slate-500">{photo.country}</p>
-                            {photo.description && (
-                              <p className="text-xs text-slate-500">{photo.description}</p>
-                            )}
-                            <p className="text-xs text-slate-400">
-                              {photoDate(photo)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                          {/* Marker's own onClick covers pointers; this button
+                              is what makes the pin reachable by Tab, so it only
+                              handles keys to avoid firing twice on click. */}
+                          <button
+                            type="button"
+                            aria-label={`${photoGroup.length} ${
+                              isMultiple ? 'photos' : 'photo'
+                            } in ${place}`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleMarkerClick(photoGroup);
+                              }
+                            }}
+                            className={`${
+                              isMultiple ? 'w-8 h-8' : 'w-6 h-6'
+                            } bg-indigo-600 hover:bg-indigo-700 rounded-full border-2 border-white cursor-pointer flex items-center justify-center text-white text-xs font-bold tabular-nums shadow-card transition-colors ${focusRing}`}
+                          >
+                            {isMultiple ? photoGroup.length : ''}
+                          </button>
+                        </Marker>
+                      );
+                    })}
+                  </Map>
                 </div>
-              )}
-            </div>
-          </Card>
 
-          {!authLoading && user && !showPublicMap && photos.length > 0 && (
-            <RecommendationsPanel
-              photoCount={photos.length}
-              onSelectPlace={handleLocationSearch}
-            />
-          )}
-
-          {showPublicMap && (
-            <CommunityRecommendationsPanel onSelectPlace={handleLocationSearch} />
-          )}
-
-          {photos.length > 0 && (
-            <Card className="p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">
-                Recent Photos ({photos.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(showAllPhotos ? photos : photos.slice(0, 6)).map((photo) => (
-                  <div
-                    key={photo.id}
-                    className="bg-slate-50 rounded-xl overflow-hidden cursor-pointer hover:bg-slate-100 transition-colors border border-slate-100"
-                    onClick={() => handleRecentPhotoClick(photo)}
+                {/* Sidebar */}
+                {selectedLocation && (
+                  <aside
+                    aria-label="Photos at the selected location"
+                    className="sm:w-1/4 flex-1 sm:flex-none bg-white border-t sm:border-t-0 sm:border-l border-slate-200 overflow-y-auto overscroll-contain"
                   >
-                    <div className="relative">
-                      <PhotoImage
-                        src={photo.file_url}
-                        alt={photo.title}
-                        width={600}
-                        className="w-full h-48 object-cover"
-                      />
-
-                    </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-slate-900 mb-1">{photo.title}</h3>
-                      <div className="flex items-center text-sm text-slate-500 mb-2">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {photo.country}
+                      <div className="flex justify-between items-start gap-2 mb-4">
+                        <h2 className="text-base font-semibold text-slate-900 min-w-0">
+                          <span className="tabular-nums">{selectedLocation.length}</span>{' '}
+                          {selectedLocation.length === 1 ? 'Photo' : 'Photos'} at This Location
+                        </h2>
+                        <button
+                          onClick={() => setSelectedLocation(null)}
+                          aria-label="Close location panel"
+                          className={`flex-shrink-0 rounded p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors ${focusRing}`}
+                        >
+                          <X className="h-4 w-4" aria-hidden="true" />
+                        </button>
                       </div>
-                      {photo.description && (
-                        <p className="text-sm text-slate-500 line-clamp-2">{photo.description}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {photos.length > 6 && (
-                <div className="mt-6 text-center">
-                  <button
-                    onClick={() => setShowAllPhotos((prev) => !prev)}
-                    className={button('secondary', 'md')}
-                  >
-                    {showAllPhotos
-                      ? 'Show fewer'
-                      : `Show all ${photos.length} photos`}
-                  </button>
-                </div>
-              )}
-            </Card>
-          )}
 
-          {photos.length === 0 && (
-            <Card className="text-center py-12">
-              <Camera className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 mb-2">No photos yet</h3>
-              <p className="text-slate-600 mb-4">
-                Be the first to share your travel photos on MercuryMap!
-              </p>
-              <Link to="/upload" className={button('primary', 'md')}>
-                <Upload className="h-4 w-4" />
-                <span>Upload Your First Photo</span>
-              </Link>
+                      {/* Photo Display */}
+                      <ul className="space-y-4">
+                        {selectedLocation.map((photo, index) => (
+                          <li key={photo.id}>
+                            <button
+                              type="button"
+                              onClick={(e) => openModal(index, e.currentTarget)}
+                              className={`block w-full text-left bg-slate-50 rounded-xl p-3 hover:bg-slate-100 active:bg-slate-200 transition-colors border border-slate-100 ${focusRing}`}
+                            >
+                              <PhotoImage
+                                src={photo.file_url}
+                                alt={photo.title || 'Travel photo'}
+                                width={400}
+                                className="w-full h-48 object-cover rounded-lg mb-3 bg-slate-200"
+                              />
+                              <div className="space-y-1 min-w-0">
+                                {photo.title && (
+                                  <h3 className="font-semibold text-sm text-slate-900 break-words">
+                                    {photo.title}
+                                  </h3>
+                                )}
+                                <p className="text-xs text-slate-500 break-words">{photo.country}</p>
+                                {photo.description && (
+                                  <p className="text-xs text-slate-500 line-clamp-3 break-words">
+                                    {photo.description}
+                                  </p>
+                                )}
+                                <p className="text-xs text-slate-400 tabular-nums">
+                                  {photoDate(photo)}
+                                </p>
+                              </div>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </aside>
+                )}
+              </div>
             </Card>
-          )}
-        </div>
-      )}
+
+            {!authLoading && user && !showPublicMap && photos.length > 0 && (
+              <RecommendationsPanel
+                photoCount={photos.length}
+                onSelectPlace={handleLocationSearch}
+              />
+            )}
+
+            {showPublicMap && (
+              <CommunityRecommendationsPanel onSelectPlace={handleLocationSearch} />
+            )}
+
+            {photos.length > 0 && (
+              <Card className="p-6" aria-labelledby="recent-photos-heading">
+                <h2 id="recent-photos-heading" className="text-xl font-bold text-slate-900 mb-4">
+                  Recent Photos (<span className="tabular-nums">{photos.length}</span>)
+                </h2>
+                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visiblePhotos.map((photo, index) => (
+                    <li
+                      key={photo.id}
+                      // Expanding to "all" can run well past 50 cards; letting
+                      // the browser skip offscreen ones keeps that cheap without
+                      // pulling in a virtual-list dependency.
+                      className="[content-visibility:auto] [contain-intrinsic-size:auto_20rem]"
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => handleRecentPhotoClick(photo, e.currentTarget)}
+                        className={`block w-full h-full text-left bg-slate-50 rounded-xl overflow-hidden hover:bg-slate-100 active:bg-slate-200 transition-colors border border-slate-100 ${focusRing}`}
+                      >
+                        <PhotoImage
+                          src={photo.file_url}
+                          alt={photo.title || 'Travel photo'}
+                          width={600}
+                          priority={index < 3}
+                          className="w-full h-48 object-cover bg-slate-200"
+                        />
+                        <div className="p-4 min-w-0">
+                          <h3 className="font-semibold text-slate-900 mb-1 break-words">
+                            {photo.title}
+                          </h3>
+                          <div className="flex items-center text-sm text-slate-500 mb-2 min-w-0">
+                            <MapPin className="h-4 w-4 mr-1 flex-shrink-0" aria-hidden="true" />
+                            <span className="truncate">{photo.country}</span>
+                          </div>
+                          {photo.description && (
+                            <p className="text-sm text-slate-500 line-clamp-2 break-words">
+                              {photo.description}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {photos.length > PREVIEW_COUNT && (
+                  <div className="mt-6 text-center">
+                    <button onClick={toggleShowAll} className={button('secondary', 'md')}>
+                      {showAllPhotos ? 'Show Fewer' : `Show All ${photos.length} Photos`}
+                    </button>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {photos.length === 0 && (
+              <Card className="text-center py-12 px-6">
+                <Camera className="h-16 w-16 text-slate-300 mx-auto mb-4" aria-hidden="true" />
+                <h2 className="text-lg font-medium text-slate-900 mb-2">No Photos Yet</h2>
+                <p className="text-slate-600 mb-4 text-pretty">
+                  Be the first to share your travel photos on{' '}
+                  <span translate="no">MercuryMap</span>.
+                </p>
+                <Link to="/upload" className={button('primary', 'md')}>
+                  <Upload className="h-4 w-4" aria-hidden="true" />
+                  <span>Upload Your First Photo</span>
+                </Link>
+              </Card>
+            )}
+          </div>
+        )}
+      </main>
 
       {/* Fullscreen Modal */}
       {modalOpen && selectedLocation && (
         <div
+          ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-label={`Photo ${currentPhotoIndex + 1} of ${selectedLocation.length}`}
-          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[9999]"
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-[9999] overflow-hidden overscroll-contain"
           onClick={handleModalClose}
           style={{
-            margin: 0,
-            padding: 0,
-            width: '100vw',
-            height: '100vh',
-            overflow: 'hidden'
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingRight: 'env(safe-area-inset-right)',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            paddingLeft: 'env(safe-area-inset-left)',
           }}
         >
           {/* Close Button */}
@@ -411,11 +498,9 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
             onClick={handleModalClose}
             aria-label="Close photo viewer"
             autoFocus
-            className="absolute top-4 right-4 text-white hover:text-slate-300 transition-colors z-10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className={`absolute top-4 right-4 text-white hover:text-slate-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
           >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-8 h-8" aria-hidden="true" />
           </button>
 
           {/* Navigation Arrows */}
@@ -427,7 +512,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                   handlePrevPhoto();
                 }}
                 aria-label="Previous photo"
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className={`absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
               >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -439,7 +524,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                   handleNextPhoto();
                 }}
                 aria-label="Next photo"
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className={`absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
               >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -450,38 +535,38 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
 
           {/* Photo Display */}
           <div
-            className="relative w-full h-full flex items-center justify-center p-8"
+            className="relative w-full h-full flex items-center justify-center p-4 sm:p-8"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={selectedLocation[currentPhotoIndex].file_url}
-              alt={selectedLocation[currentPhotoIndex].title || 'Photo'}
-              className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg"
+              alt={selectedLocation[currentPhotoIndex].title || 'Travel photo'}
+              className="max-w-full max-h-[80vh] object-contain rounded-lg"
             />
 
             {/* Photo Info */}
             <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-50 text-white p-4 rounded-xl">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
+              <div className="flex justify-between items-start gap-3">
+                <div className="flex-1 min-w-0">
                   {selectedLocation[currentPhotoIndex].title && (
-                    <h3 className="text-lg font-semibold mb-1">
+                    <h2 className="text-lg font-semibold mb-1 break-words">
                       {selectedLocation[currentPhotoIndex].title}
-                    </h3>
+                    </h2>
                   )}
-                  <p className="text-sm text-slate-300 mb-1">
+                  <p className="text-sm text-slate-300 mb-1 break-words">
                     {selectedLocation[currentPhotoIndex].country}
                   </p>
                   {selectedLocation[currentPhotoIndex].description && (
-                    <p className="text-sm text-slate-300 mb-1">
+                    <p className="text-sm text-slate-300 mb-1 line-clamp-3 break-words">
                       {selectedLocation[currentPhotoIndex].description}
                     </p>
                   )}
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-400 tabular-nums">
                     {photoDate(selectedLocation[currentPhotoIndex])}
                   </p>
                 </div>
                 {selectedLocation.length > 1 && (
-                  <div className="text-sm text-slate-300">
+                  <div className="text-sm text-slate-300 tabular-nums flex-shrink-0">
                     {currentPhotoIndex + 1} / {selectedLocation.length}
                   </div>
                 )}

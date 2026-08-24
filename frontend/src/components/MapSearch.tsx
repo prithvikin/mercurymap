@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { Search, MapPin, AlertCircle } from 'lucide-react';
+import Spinner from './ui/Spinner.tsx';
+import { focusRing } from './ui/buttonStyles.ts';
 import {
   geocoderErrorMessage,
   GEOCODER_NETWORK_ERROR,
@@ -47,7 +49,7 @@ interface MapSearchProps {
 
 const MapSearch: React.FC<MapSearchProps> = ({ 
   onLocationSelect, 
-  placeholder = "Search for a city, country, or landmark..." 
+  placeholder = "Search for a city, country, or landmark…"
 }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<MapboxFeature[]>([]);
@@ -56,6 +58,9 @@ const MapSearch: React.FC<MapSearchProps> = ({
   const [searched, setSearched] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const generatedId = useId();
+  const inputId = `map-search-${generatedId}`;
+  const listboxId = `${inputId}-listbox`;
 
   const searchLocations = async (searchQuery: string) => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
@@ -133,40 +138,61 @@ const MapSearch: React.FC<MapSearchProps> = ({
     return 'Location';
   };
 
+  const expanded = showSuggestions && suggestions.length > 0;
+
   return (
     <div className="relative w-full max-w-md">
       <div className="relative">
+        <label htmlFor={inputId} className="sr-only">
+          Search the map for a place
+        </label>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-slate-400" />
+          <Search className="h-5 w-5 text-slate-400" aria-hidden="true" />
         </div>
         <input
+          id={inputId}
           type="text"
+          role="combobox"
+          aria-expanded={expanded}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          autoComplete="off"
+          spellCheck={false}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
             setShowSuggestions(true);
           }}
           onFocus={() => setShowSuggestions(true)}
-          className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-lg leading-5 bg-white shadow-card placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setShowSuggestions(false);
+          }}
+          className="block w-full pl-10 pr-10 py-2 border border-slate-300 rounded-lg leading-5 bg-white shadow-card placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           placeholder={placeholder}
         />
         {loading && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-indigo-600">
+            <Spinner label="Searching for places…" className="h-4 w-4" />
           </div>
         )}
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-auto">
-          {suggestions.map((feature) => (
+      <ul
+        id={listboxId}
+        role="listbox"
+        aria-label="Place suggestions"
+        hidden={!expanded}
+        className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-auto"
+      >
+        {suggestions.map((feature) => (
+          <li key={feature.id} role="option" aria-selected={false}>
             <button
-              key={feature.id}
+              type="button"
               onClick={() => handleSelect(feature)}
-              className="w-full text-left px-4 py-3 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none border-b border-slate-100 last:border-b-0"
+              className={`w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 ${focusRing} focus-visible:ring-inset focus-visible:ring-offset-0`}
             >
               <div className="flex items-start">
-                <MapPin className="h-4 w-4 text-slate-400 mt-0.5 mr-2 flex-shrink-0" />
+                <MapPin className="h-4 w-4 text-slate-400 mt-0.5 mr-2 flex-shrink-0" aria-hidden="true" />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-slate-900 truncate">
                     {feature.text}
@@ -180,15 +206,16 @@ const MapSearch: React.FC<MapSearchProps> = ({
                 </div>
               </div>
             </button>
-          ))}
-        </div>
-      )}
+          </li>
+        ))}
+      </ul>
+
       {showSuggestions && !loading && error && (
         <div
           role="status"
           className="absolute z-10 w-full mt-1 bg-white border border-red-200 rounded-xl shadow-lg px-3 py-2 flex items-start gap-2"
         >
-          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
           <span className="text-sm text-red-700">{error}</span>
         </div>
       )}
@@ -205,4 +232,4 @@ const MapSearch: React.FC<MapSearchProps> = ({
   );
 };
 
-export default MapSearch; 
+export default MapSearch;

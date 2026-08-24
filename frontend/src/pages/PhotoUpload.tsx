@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { X, FileImage, User, LogIn } from 'lucide-react';
@@ -9,7 +9,21 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import { Link } from 'react-router-dom';
 import NavBar from '../components/NavBar.tsx';
 import Card from '../components/ui/Card.tsx';
-import { button } from '../components/ui/buttonStyles.ts';
+import Spinner from '../components/ui/Spinner.tsx';
+import { button, focusRing } from '../components/ui/buttonStyles.ts';
+
+const PUBLIC_MAP_OWNER = 'mercurymap725@gmail.com';
+
+// Coordinates are numbers in a fixed-precision column, so they get the reader's
+// decimal separator rather than a hardcoded "12.3456".
+const coordFormat = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 4,
+  maximumFractionDigits: 4,
+});
+
+const fieldClasses =
+  'mt-1 block w-full px-3 py-2 border rounded-lg sm:text-sm ' +
+  'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500';
 
 const PhotoUpload: React.FC = () => {
   const { user } = useAuth();
@@ -30,12 +44,16 @@ const PhotoUpload: React.FC = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadToPublic, setUploadToPublic] = useState(false);
+  const [errors, setErrors] = useState<{ file?: string; location?: string }>({});
   const navigate = useNavigate();
+
+  const isPublicMapOwner = user?.email === PUBLIC_MAP_OWNER;
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
       setSelectedFile(file);
+      setErrors((prev) => ({ ...prev, file: undefined }));
       const reader = new FileReader();
       reader.onload = () => {
         setPreview(reader.result as string);
@@ -52,6 +70,27 @@ const PhotoUpload: React.FC = () => {
     multiple: false
   });
 
+  // A half-filled upload is real work; a stray back-button or tab close would
+  // silently discard the file and the location lookup.
+  const isDirty =
+    !loading &&
+    (selectedFile != null ||
+      selectedLocation != null ||
+      formData.description !== '' ||
+      formData.taken_date !== '');
+
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
@@ -67,81 +106,101 @@ const PhotoUpload: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const nextErrors: { file?: string; location?: string } = {};
     if (!selectedFile) {
-      toast.error('Please select a photo to upload');
-      return;
+      nextErrors.file = 'Choose a photo to upload — drag one in or click to browse.';
     }
-
     if (!selectedLocation) {
-      toast.error('Please select a location for your photo');
+      nextErrors.location = 'Search for a place and pick it from the list to set the location.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      // Send focus to whichever field is the first to fail.
+      const target = document.getElementById(nextErrors.file ? 'photo-dropzone' : 'location');
+      target?.focus();
       return;
     }
 
+    setErrors({});
     setLoading(true);
 
     try {
       await photoService.uploadPhoto(
-        selectedFile,
-        selectedLocation.city || 'Untitled',
+        selectedFile!,
+        selectedLocation!.city || 'Untitled',
         formData.description,
-        selectedLocation.country,
-        selectedLocation.lat,
-        selectedLocation.lng,
+        selectedLocation!.country,
+        selectedLocation!.lat,
+        selectedLocation!.lng,
         formData.taken_date || null,
-        (user && user.email === 'mercurymap725@gmail.com' && uploadToPublic) ? undefined : user?.id
+        (isPublicMapOwner && uploadToPublic) ? undefined : user?.id
       );
 
-      toast.success('Photo uploaded successfully!');
+      toast.success('Photo uploaded successfully.');
       navigate(user ? '/app' : '/');
     } catch (error: any) {
-      toast.error(error.message || 'Upload failed');
+      toast.error(
+        error.message
+          ? `${error.message} Check your connection and try again.`
+          : 'Upload failed. Check your connection and try again.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const destination = user
+    ? isPublicMapOwner && uploadToPublic
+      ? 'the Public'
+      : 'Your Private'
+    : 'the Public';
+
   return (
     <div className="min-h-screen bg-slate-50">
       <NavBar />
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main id="main-content" className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card className="p-6 sm:p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-bold text-slate-900">
-              Upload Photo to {user ? (user.email === 'mercurymap725@gmail.com' && uploadToPublic ? 'the Public' : 'Your Private') : 'the Public'} MercuryMap
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <h1 className="text-xl font-bold text-slate-900 text-balance">
+              Upload Photo to {destination} <span translate="no">MercuryMap</span>
             </h1>
             {user && (
-              <div className="flex items-center space-x-2 text-sm text-slate-500">
-                <User className="h-4 w-4" />
-                <span>{user.email}</span>
+              <div className="flex items-center gap-2 text-sm text-slate-500 min-w-0">
+                <User className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                <span className="truncate">{user.email}</span>
               </div>
             )}
           </div>
 
-          {user && user.email === 'mercurymap725@gmail.com' && (
+          {isPublicMapOwner && (
             <div className="mb-4">
-              <label className="inline-flex items-center">
+              <label htmlFor="upload-to-public" className="inline-flex items-center cursor-pointer">
                 <input
+                  id="upload-to-public"
                   type="checkbox"
                   checked={uploadToPublic}
                   onChange={() => setUploadToPublic(!uploadToPublic)}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  aria-describedby="upload-to-public-hint"
+                  className={`h-4 w-4 rounded border-slate-300 text-indigo-600 ${focusRing}`}
                 />
                 <span className="ml-2 text-sm text-slate-700">
-                  Upload to <span className="font-semibold">public MercuryMap</span>
+                  Upload to{' '}
+                  <span className="font-semibold">
+                    public <span translate="no">MercuryMap</span>
+                  </span>
                 </span>
               </label>
-              <p className="text-xs text-slate-500 mt-1">
-                Only you can upload to the public map. Unchecked = private map.
+              <p id="upload-to-public-hint" className="text-xs text-slate-500 mt-1">
+                Only you can upload to the public map. Leave it unchecked to use your private map.
               </p>
             </div>
           )}
 
-          {user && user.email !== 'mercurymap725@gmail.com' && (
+          {user && !isPublicMapOwner && (
             <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-              <p className="text-sm text-amber-800">
-                Your uploads will go to your private map.
-              </p>
+              <p className="text-sm text-amber-800">Your uploads will go to your private map.</p>
             </div>
           )}
           {!user && (
@@ -151,49 +210,77 @@ const PhotoUpload: React.FC = () => {
               </p>
               <Link
                 to="/login"
-                className="inline-flex items-center space-x-2 text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+                className={`inline-flex items-center gap-2 rounded px-1 text-indigo-600 hover:text-indigo-700 hover:underline text-sm font-medium ${focusRing}`}
               >
-                <LogIn className="h-4 w-4" />
+                <LogIn className="h-4 w-4" aria-hidden="true" />
                 <span>Sign In</span>
               </Link>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <span id="photo-label" className="block text-sm font-medium text-slate-700 mb-2">
                 Photo
-              </label>
+              </span>
               {!selectedFile ? (
                 <div
-                  {...getRootProps()}
-                  className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                    isDragActive ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 hover:border-slate-400'
+                  {...getRootProps({
+                    id: 'photo-dropzone',
+                    'aria-labelledby': 'photo-label',
+                    'aria-describedby': errors.file ? 'photo-error' : 'photo-hint',
+                    'aria-invalid': Boolean(errors.file),
+                  })}
+                  className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${focusRing} ${
+                    errors.file
+                      ? 'border-red-400 bg-red-50'
+                      : isDragActive
+                        ? 'border-indigo-500 bg-indigo-50'
+                        : 'border-slate-300 hover:border-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <input {...getInputProps()} />
-                  <FileImage className="h-10 w-10 text-slate-400 mx-auto mb-4" />
+                  {/* react-dropzone puts a real <input type="file"> here and
+                      wires the root for keyboard activation, so Enter/Space on
+                      the zone opens the picker -- drag is never the only way. */}
+                  <input {...getInputProps()} aria-labelledby="photo-label" />
+                  <FileImage className="h-10 w-10 text-slate-400 mx-auto mb-4" aria-hidden="true" />
                   {isDragActive ? (
-                    <p className="text-indigo-600">Drop the photo here...</p>
+                    <p className="text-indigo-600">Drop the photo here…</p>
                   ) : (
-                    <p className="text-slate-600 text-sm">Drag and drop a photo here, or click to select</p>
+                    <p className="text-slate-600 text-sm">
+                      Drag and drop a photo here, or click to select
+                    </p>
                   )}
                 </div>
               ) : (
                 <div className="relative">
                   <img
                     src={preview!}
-                    alt="Preview"
-                    className="w-full h-64 object-cover rounded-xl"
+                    alt={`Preview of ${selectedFile.name}`}
+                    width={1200}
+                    height={800}
+                    className="w-full h-64 object-cover rounded-xl bg-slate-100"
                   />
                   <button
                     type="button"
                     onClick={removeFile}
-                    className="absolute top-2 right-2 p-1.5 bg-white text-slate-700 rounded-full shadow-card hover:bg-slate-50"
+                    aria-label={`Remove ${selectedFile.name}`}
+                    className={`absolute top-2 right-2 p-1.5 bg-white text-slate-700 rounded-full shadow-card hover:bg-slate-50 active:bg-slate-100 transition-colors ${focusRing}`}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
+              )}
+              {errors.file ? (
+                <p id="photo-error" className="mt-1.5 text-sm text-red-600">
+                  {errors.file}
+                </p>
+              ) : (
+                !selectedFile && (
+                  <p id="photo-hint" className="mt-1.5 text-xs text-slate-500">
+                    JPG, PNG, GIF, or WebP.
+                  </p>
+                )
               )}
             </div>
 
@@ -207,18 +294,22 @@ const PhotoUpload: React.FC = () => {
                 value={formData.description}
                 onChange={handleChange}
                 rows={3}
-                className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Tell us about this photo..."
+                maxLength={500}
+                className={`${fieldClasses} border-slate-300`}
+                placeholder="A rainy morning in the old town…"
               />
             </div>
 
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="location" className="block text-sm font-medium text-slate-700 mb-1">
                 Location
               </label>
               <LocationSearch
+                id="location"
+                aria-describedby={errors.location ? 'location-error' : undefined}
                 onLocationSelect={(location) => {
                   setSelectedLocation(location);
+                  setErrors((prev) => ({ ...prev, location: undefined }));
                   setFormData(prev => ({
                     ...prev,
                     country: location.country,
@@ -226,15 +317,24 @@ const PhotoUpload: React.FC = () => {
                     longitude: location.lng.toString()
                   }));
                 }}
-                placeholder="Search for a city or country..."
+                placeholder="Search for a city or country…"
               />
+              {errors.location && (
+                <p id="location-error" className="mt-1.5 text-sm text-red-600">
+                  {errors.location}
+                </p>
+              )}
               {selectedLocation && (
-                <div className="mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                  <p className="text-sm text-emerald-800">
+                <div
+                  role="status"
+                  className="mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl"
+                >
+                  <p className="text-sm text-emerald-800 break-words">
                     Selected: {selectedLocation.city}, {selectedLocation.country}
                   </p>
-                  <p className="text-xs text-emerald-600">
-                    Coordinates: {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)}
+                  <p className="text-xs text-emerald-600 tabular-nums">
+                    Coordinates: {coordFormat.format(selectedLocation.lat)},{' '}
+                    {coordFormat.format(selectedLocation.lng)}
                   </p>
                 </div>
               )}
@@ -250,17 +350,28 @@ const PhotoUpload: React.FC = () => {
                 name="taken_date"
                 value={formData.taken_date}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                autoComplete="off"
+                max={new Date().toISOString().slice(0, 10)}
+                className={`${fieldClasses} border-slate-300`}
               />
             </div>
 
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              {/* Enabled until the request starts: a missing photo or location
+                  gets an inline message, not a button that does nothing. */}
               <button
                 type="submit"
-                disabled={loading || !selectedFile}
+                disabled={loading}
                 className={button('primary', 'lg', 'flex-1')}
               >
-                {loading ? 'Uploading...' : 'Upload Photo'}
+                {loading ? (
+                  <>
+                    <Spinner label="Uploading your photo…" className="h-4 w-4" />
+                    <span>Uploading…</span>
+                  </>
+                ) : (
+                  <span>Upload Photo</span>
+                )}
               </button>
               <button
                 type="button"
@@ -272,7 +383,7 @@ const PhotoUpload: React.FC = () => {
             </div>
           </form>
         </Card>
-      </div>
+      </main>
     </div>
   );
 };

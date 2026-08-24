@@ -1,11 +1,19 @@
 import { supabase, Photo } from '../lib/supabase.ts';
 
+// The columns of the Photo interface, listed explicitly rather than select('*').
+// add_semantic_search.sql adds `embedding` (384 floats, ~6KB as JSON) and a
+// stored `tsv` to this table; select('*') would drag both into every map load
+// and photo grid, none of which use them. Naming the columns also means a
+// future column can't silently bloat these queries.
+const PHOTO_COLUMNS =
+  'id, title, description, country, latitude, longitude, taken_date, file_path, file_url, user_id, created_at, updated_at';
+
 export const photoService = {
   // Get all photos (public only)
   async getAllPhotos(): Promise<Photo[]> {
     const { data, error } = await supabase
       .from('photos')
-      .select('*')
+      .select(PHOTO_COLUMNS)
       .is('user_id', null) // Only public photos (no user_id)
       .order('created_at', { ascending: false });
 
@@ -17,7 +25,7 @@ export const photoService = {
   async getUserPhotos(userId: string): Promise<Photo[]> {
     const { data, error } = await supabase
       .from('photos')
-      .select('*')
+      .select(PHOTO_COLUMNS)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
@@ -29,7 +37,7 @@ export const photoService = {
   async getPhotosByCountry(country: string): Promise<Photo[]> {
     const { data, error } = await supabase
       .from('photos')
-      .select('*')
+      .select(PHOTO_COLUMNS)
       .eq('country', country)
       .is('user_id', null) // Only public photos
       .order('created_at', { ascending: false });
@@ -42,7 +50,7 @@ export const photoService = {
   async getUserPhotosByCountry(userId: string, country: string): Promise<Photo[]> {
     const { data, error } = await supabase
       .from('photos')
-      .select('*')
+      .select(PHOTO_COLUMNS)
       .eq('user_id', userId)
       .eq('country', country)
       .order('created_at', { ascending: false });
@@ -55,7 +63,7 @@ export const photoService = {
   async getPhotoById(id: string): Promise<Photo | null> {
     const { data, error } = await supabase
       .from('photos')
-      .select('*')
+      .select(PHOTO_COLUMNS)
       .eq('id', id)
       .single();
 

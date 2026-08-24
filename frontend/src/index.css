@@ -12,6 +12,27 @@ body {
   background-color: #f8fafc;
 }
 
+/* Kill the 300ms double-tap zoom delay and the grey flash iOS paints over taps;
+   every tappable surface here already has its own hover/active styling. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+[role='button'],
+label,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Sticky nav is 4rem tall, so an anchored heading would land underneath it. */
+:target {
+  scroll-margin-top: 5rem;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
@@ -45,4 +66,18 @@ code {
 /* Hide default close button since we have our own */
 .mapboxgl-popup-close-button {
   display: none;
-} 
+}
+
+/* Nobody's animation is load-bearing here -- spinners, hovers, and the map
+   sidebar slide are all decorative -- so reduced motion switches them off
+   rather than swapping in a quieter variant. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
