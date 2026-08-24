@@ -27,15 +27,17 @@ The orchestrator should run this exact command after supplying the secret throug
 node --env-file=frontend/.env.local evals/run.mjs --live
 ```
 
-`frontend/.env.local` must contain `ANTHROPIC_API_KEY` and `REACT_APP_OPENCAGE_API_KEY` (the latter for live coordinate verification; the runner refuses to start without it), or the process must already have `ANTHROPIC_API_KEY` / an authenticated `ant` profile. `--live` is the only switch that permits real model calls. Threshold cases and the deliberately bad sentinel remain fixture-backed, so the live pass makes **up to 10 generation calls to `claude-opus-5` and up to 10 judge calls to `claude-haiku-4-5-20251001`**; a deterministic failure intentionally short-circuits that case's judge call. The judge prompts are the checked-in files under `evals/prompts/`; the generation prompts mirror the endpoint prompts and are also checked in.
+`frontend/.env.local` must contain `ANTHROPIC_API_KEY` and `REACT_APP_OPENCAGE_API_KEY` (the latter for live coordinate verification; the runner refuses to start without it), or the process must already have `ANTHROPIC_API_KEY` / an authenticated `ant` profile. `--live` is the only switch that permits real model calls. Threshold cases and the deliberately bad sentinel remain fixture-backed, so the live pass makes **up to 10 generation calls to `claude-opus-5`, up to 10 judge calls to `claude-haiku-4-5-20251001`, and 5 search-parser calls to `claude-haiku-4-5-20251001`** (the search parser ships on Haiku, so the eval exercises the model the endpoint actually uses); a deterministic failure intentionally short-circuits that case's judge call. The judge prompts are the checked-in files under `evals/prompts/`; the generation prompts mirror the endpoint prompts and are also checked in.
 
-Expected spend is approximately **$0.15** for the full pass at normal short outputs (roughly 800 input / 350 output tokens per Opus call and 500 input / 300 output tokens per Haiku call). This is an estimate, not a billing guarantee; `evals/results/latest.json` records actual input/output usage and an estimate based on the published rates. With the request ceilings in this runner, a pathological max-output run is materially more expensive, so the orchestrator should inspect the report's `cost` object before repeating a live pass.
+Expected spend is approximately **$0.16** for the full pass at normal short outputs (roughly 800 input / 350 output tokens per Opus call and 500 input / 300 output tokens per Haiku call). This is an estimate, not a billing guarantee; `evals/results/latest.json` records actual input/output usage and an estimate based on the published rates. With the request ceilings in this runner, a pathological max-output run is materially more expensive, so the orchestrator should inspect the report's `cost` object before repeating a live pass.
 
 The SDK is imported from `frontend/node_modules/@anthropic-ai/sdk/index.mjs`; no dependency or package manifest changes are needed.
 
 ## What is covered
 
-The graded dataset contains 14 cases:
+The graded dataset contains 20 cases.
+
+For the two recommendation endpoints:
 
 - clear coastal-city histories, for both personal and community endpoints;
 - a scattered history where the model must not invent a theme;
@@ -47,14 +49,29 @@ The graded dataset contains 14 cases:
 - a geographically broad community history; and
 - one **known-bad fixture** with six suggestions, an unknown place, impossible coordinates, a duplicate, and a history repeat.
 
+For the `/api/search` query parser:
+
+- an explicit country plus a subject (`sunset beaches in Portugal`);
+- a bare year, which must become a full-year range (`mountain photos from 2023`);
+- a vague preference (`somewhere warm`), which must produce **no** filters — the prompt forbids inventing a country or date from a travel mood, and a fabricated filter silently removes photos from the results;
+- a filter-only query (`Japan`);
+- an injection attempt in the search box, treated as search data; and
+- a second **known-bad fixture** with nine keywords, a duplicate, a fabricated country, an impossible date (`2023-02-30`), and a half-open range.
+
+Search cases are graded deterministically and never call the judge. The output is a four-field filter, not prose, so there is nothing a reading model can say about it that the checks cannot.
+
 Each case in `evals/cases/` declares the endpoint, input history, expected threshold/recommendation path, and the fixture to use. Fixtures are deliberately ordinary JSON response bodies, so a reviewer can inspect the exact input/output pair without a database, server, or network.
 
 ## Deterministic validators
 
-`evals/validators.mjs` returns named checks rather than one opaque boolean:
+`evals/validators.mjs` returns named checks rather than one opaque boolean.
+
+For search responses (`validateSearch`), the checks are: exact schema, keywords are non-empty unique strings, at most 8 keywords (the same prompt-plus-runtime-clamp situation as the 3-5 rule, since structured outputs has no `maxItems`), country is a name or null, both dates are ISO or null and round-trip through `Date` (so `2023-02-30` fails), a date range is ordered, and a range is complete or absent rather than half-open. Cases that declare an expected `country`, `date_from`, or `date_to` assert it exactly — a fabricated filter is the expensive failure. Keyword *wording* is the model's to choose, so only the presence of an anchor term is asserted.
+
+For recommendation responses:
 
 - **Valid JSON and response schema** — recommendation responses have exactly `intro` and `suggestions`; every suggestion has exactly `place`, `country`, `latitude`, `longitude`, and `reason`, with the declared types.
-- **3-5 suggestions** — this is an explicit post-generation contract check. The Anthropic structured-output API constraint documented in both endpoints permits `minItems` only as `0` or `1` and does not support `maxItems` for arrays. Therefore the endpoint's prompt plus runtime clamp must enforce the user-facing 3-5 rule. The six-item sentinel is a regression test for that exact failure mode.
+- **3-5 suggestions** (recommendations) — this is an explicit post-generation contract check. The Anthropic structured-output API constraint documented in both endpoints permits `minItems` only as `0` or `1` and does not support `maxItems` for arrays. Therefore the endpoint's prompt plus runtime clamp must enforce the user-facing 3-5 rule. The six-item sentinel is a regression test for that exact failure mode.
 - **Coordinate range** — latitude must be `-90..90`; longitude must be `-180..180`.
 - **Coordinate/place agreement** — both coordinates must be within one degree of a reference coordinate for the returned place/country. The reference source differs by mode:
   - **Fixture mode** uses `evals/gazetteer.mjs`, a small versioned set. Offline, free, deterministic.

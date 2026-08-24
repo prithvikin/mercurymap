@@ -1,0 +1,16 @@
+{
+  "id": "15-search-country-and-subject",
+  "title": "Explicit country plus a subject",
+  "endpoint": "search",
+  "query": "sunset beaches in Portugal",
+  "expected": {
+    "kind": "search",
+    "country": "Portugal",
+    "date_from": null,
+    "date_to": null,
+    "mustIncludeKeyword": [
+      "beach"
+    ],
+    "fixture": "15-search-country-and-subject.json"
+  }
+}

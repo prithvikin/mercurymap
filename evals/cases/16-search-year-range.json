@@ -1,0 +1,16 @@
+{
+  "id": "16-search-year-range",
+  "title": "A bare year becomes a full-year range",
+  "endpoint": "search",
+  "query": "mountain photos from 2023",
+  "expected": {
+    "kind": "search",
+    "country": null,
+    "date_from": "2023-01-01",
+    "date_to": "2023-12-31",
+    "mustIncludeKeyword": [
+      "mountain"
+    ],
+    "fixture": "16-search-year-range.json"
+  }
+}

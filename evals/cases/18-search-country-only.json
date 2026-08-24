@@ -1,0 +1,13 @@
+{
+  "id": "18-search-country-only",
+  "title": "A filter-only query may return no keywords",
+  "endpoint": "search",
+  "query": "Japan",
+  "expected": {
+    "kind": "search",
+    "country": "Japan",
+    "date_from": null,
+    "date_to": null,
+    "fixture": "18-search-country-only.json"
+  }
+}

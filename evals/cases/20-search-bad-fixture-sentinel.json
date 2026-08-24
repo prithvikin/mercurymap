@@ -1,0 +1,14 @@
+{
+  "id": "20-search-bad-fixture-sentinel",
+  "title": "Known-bad search parse, to prove the validators fail closed",
+  "endpoint": "search",
+  "query": "beaches",
+  "expected": {
+    "kind": "search",
+    "expectFailure": true,
+    "country": null,
+    "date_from": null,
+    "date_to": null,
+    "fixture": "20-search-bad-fixture-sentinel.json"
+  }
+}

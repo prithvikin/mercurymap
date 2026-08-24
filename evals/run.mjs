@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateJudgeResult, validateResponse, summarizeChecks } from './validators.mjs';
+import { validateJudgeResult, validateResponse, validateSearch, summarizeChecks } from './validators.mjs';
 import { checkPromptSync } from './prompt-sync.mjs';
 import { geocoderApiKey, referenceKey, resolveSuggestions } from './geocoder.mjs';
 
@@ -22,6 +22,21 @@ const args = new Set(process.argv.slice(2));
 const live = args.has('--live');
 
 const GENERATION_MODEL = 'claude-opus-5';
+// The search parser is a small extraction call and ships on Haiku, so the eval
+// exercises the model the endpoint actually uses rather than a stronger one.
+const SEARCH_MODEL = 'claude-haiku-4-5-20251001';
+// Mirrors SEARCH_SCHEMA in frontend/api/search.ts.
+const SEARCH_SCHEMA = {
+  type: 'object',
+  properties: {
+    keywords: { type: 'array', minItems: 0, items: { type: 'string' } },
+    country: { type: ['string', 'null'] },
+    date_from: { type: ['string', 'null'] },
+    date_to: { type: ['string', 'null'] },
+  },
+  required: ['keywords', 'country', 'date_from', 'date_to'],
+  additionalProperties: false,
+};
 // Kept exactly as requested for the inexpensive judge pass.
 const JUDGE_MODEL = 'claude-haiku-4-5-20251001';
 // Quality gate. A response that clears every deterministic check can still be
@@ -183,6 +198,18 @@ async function generateLive(client, testCase) {
   return { value: extractJsonText(message), usage: message.usage ?? null, model: message.model ?? GENERATION_MODEL };
 }
 
+async function searchLive(client, testCase) {
+  const message = await client.messages.create({
+    model: SEARCH_MODEL,
+    max_tokens: 768,
+    output_config: { format: { type: 'json_schema', schema: SEARCH_SCHEMA } },
+    system: readText(path.join(PROMPTS_DIR, 'search-system.md')),
+    // Identical framing to parseQuery() in frontend/api/search.ts.
+    messages: [{ role: 'user', content: `Search query: ${testCase.query}` }],
+  });
+  return { value: extractJsonText(message), usage: message.usage ?? null, model: message.model ?? SEARCH_MODEL };
+}
+
 async function judgeLive(client, testCase, output) {
   const system = readText(path.join(PROMPTS_DIR, 'judge-system.md'));
   const user = fillTemplate(readText(path.join(PROMPTS_DIR, 'judge-user.md')), {
@@ -255,6 +282,7 @@ async function main() {
   const reportCases = [];
   let generationUsage = [];
   let judgeUsage = [];
+  let searchUsage = [];
 
   for (const testCase of cases) {
     const expected = testCase.expected;
@@ -270,6 +298,10 @@ async function main() {
         generation = await generateLive(client, testCase);
         output = generation.value;
         generationUsage.push(generation.usage);
+      } else if (live && !expected.expectFailure && expected.kind === 'search') {
+        generation = await searchLive(client, testCase);
+        output = generation.value;
+        searchUsage.push(generation.usage);
       } else {
         output = readJson(path.join(FIXTURES_DIR, expected.fixture));
       }
@@ -295,6 +327,8 @@ async function main() {
 
     const deterministic = output === undefined
       ? { passed: false, checks: [], value: null }
+      : expected.kind === 'search'
+      ? validateSearch(output, expected)
       : validateResponse(output, testCase.history, {
         endpoint: testCase.endpoint,
         expectedKind: expected.kind,
@@ -347,18 +381,23 @@ async function main() {
 
   const normalCases = reportCases.filter((item) => !item.case.expected.expectFailure);
   const judgeResults = reportCases.map((item) => item.judge?.value).filter((value) => value && Number.isFinite(value.overall_score));
-  const totalInputTokens = [...generationUsage, ...judgeUsage].reduce((sum, usage) => sum + Number(usage?.input_tokens ?? 0), 0);
-  const totalOutputTokens = [...generationUsage, ...judgeUsage].reduce((sum, usage) => sum + Number(usage?.output_tokens ?? 0), 0);
+  const allUsage = [...generationUsage, ...judgeUsage, ...searchUsage];
+  const totalInputTokens = allUsage.reduce((sum, usage) => sum + Number(usage?.input_tokens ?? 0), 0);
+  const totalOutputTokens = allUsage.reduce((sum, usage) => sum + Number(usage?.output_tokens ?? 0), 0);
   const estimatedUsd = generationUsage.reduce((sum, usage) => sum + (usageCost(GENERATION_MODEL, usage) ?? 0), 0)
-    + judgeUsage.reduce((sum, usage) => sum + (usageCost(JUDGE_MODEL, usage) ?? 0), 0);
-  const maxEstimatedUsd = normalCases.filter((item) => item.case.expected.kind === 'recommendations').length * 0.012
-    + normalCases.filter((item) => item.case.expected.kind === 'recommendations').length * 0.003;
+    + judgeUsage.reduce((sum, usage) => sum + (usageCost(JUDGE_MODEL, usage) ?? 0), 0)
+    + searchUsage.reduce((sum, usage) => sum + (usageCost(SEARCH_MODEL, usage) ?? 0), 0);
+  const recommendationCases = normalCases.filter((item) => item.case.expected.kind === 'recommendations').length;
+  // Search adds a Haiku extraction call per case, an order of magnitude cheaper
+  // than an Opus generation, so it barely moves the planning estimate.
+  const searchCases = normalCases.filter((item) => item.case.expected.kind === 'search').length;
+  const maxEstimatedUsd = recommendationCases * 0.012 + recommendationCases * 0.003 + searchCases * 0.001;
 
   const regressions = reportCases.filter((item) => item.status === 'REGRESSION').length + promptDrift;
   const report = {
     generatedAt: new Date().toISOString(),
     mode: live ? 'live' : 'fixtures',
-    models: { generation: GENERATION_MODEL, judge: JUDGE_MODEL },
+    models: { generation: GENERATION_MODEL, judge: JUDGE_MODEL, search: SEARCH_MODEL },
     promptSync,
     summary: {
       total: reportCases.length,

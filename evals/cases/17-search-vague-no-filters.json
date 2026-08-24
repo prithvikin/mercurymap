@@ -1,0 +1,13 @@
+{
+  "id": "17-search-vague-no-filters",
+  "title": "A vague preference must not invent filters",
+  "endpoint": "search",
+  "query": "somewhere warm",
+  "expected": {
+    "kind": "search",
+    "country": null,
+    "date_from": null,
+    "date_to": null,
+    "fixture": "17-search-vague-no-filters.json"
+  }
+}

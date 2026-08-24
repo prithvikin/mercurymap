@@ -209,6 +209,83 @@ export function validateResponse(rawResponse, history, options = {}) {
   };
 }
 
+const SEARCH_KEYS = ['keywords', 'country', 'date_from', 'date_to'];
+// Mirrors MAX_KEYWORDS in frontend/api/search.ts. Structured outputs accepts
+// minItems 0 or 1 and has no maxItems, so the ceiling lives in the prompt plus
+// a runtime clamp -- exactly the shape that needs a post-generation check.
+const MAX_KEYWORDS = 8;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isIsoDate(value) {
+  if (typeof value !== 'string' || !ISO_DATE.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+/**
+ * Validate the /api/search query parser.
+ *
+ * The endpoint turns a search box into a Postgres filter, so the failure that
+ * matters is not a bad sentence but a fabricated constraint: a country or date
+ * the user never asked for silently removes their photos from the results.
+ * `expected` therefore asserts on filters rather than on wording.
+ */
+export function validateSearch(rawResponse, expected = {}) {
+  const parsed = parseJson(rawResponse);
+  const checks = [check('valid JSON', !parsed.error, parsed.error ?? 'parsed')];
+  if (parsed.error) return { passed: false, checks, value: null };
+
+  const value = parsed.value;
+  checks.push(check('search schema', hasExactlyKeys(value, SEARCH_KEYS), 'required keys are exactly keywords, country, date_from, and date_to'));
+
+  const keywords = value?.keywords;
+  const keywordsValid = Array.isArray(keywords) && keywords.every((item) => typeof item === 'string' && item.trim().length > 0);
+  checks.push(check('keywords are non-empty strings', keywordsValid, 'keywords must be an array of non-empty strings'));
+  checks.push(check(`keyword count <= ${MAX_KEYWORDS}`, Array.isArray(keywords) && keywords.length <= MAX_KEYWORDS, `received ${Array.isArray(keywords) ? keywords.length : 'non-array'}`));
+
+  if (Array.isArray(keywords)) {
+    const normalized = keywords.map((item) => String(item).trim().toLowerCase());
+    checks.push(check('keywords are unique', new Set(normalized).size === normalized.length, 'the runtime clamp de-duplicates; the parser should not emit repeats'));
+  }
+
+  const countryValid = value?.country === null || (typeof value?.country === 'string' && value.country.trim().length > 0);
+  checks.push(check('country is a name or null', countryValid, 'country must be a non-empty string or null'));
+
+  for (const field of ['date_from', 'date_to']) {
+    const raw = value?.[field];
+    checks.push(check(`${field} is an ISO date or null`, raw === null || isIsoDate(raw), `${field} must be YYYY-MM-DD or null`));
+  }
+
+  if (isIsoDate(value?.date_from) && isIsoDate(value?.date_to)) {
+    checks.push(check('date range is ordered', value.date_from <= value.date_to, 'date_from must not be after date_to'));
+  }
+  // A half-open range reaches Postgres as a single-sided filter, which is a
+  // different search than the user asked for.
+  checks.push(check('date range is complete or absent', (value?.date_from === null) === (value?.date_to === null), 'date_from and date_to must both be set or both be null'));
+
+  // Fabricated filters are the expensive failure: they silently exclude photos.
+  if ('country' in expected) {
+    const actual = typeof value?.country === 'string' ? value.country.trim().toLowerCase() : null;
+    const wanted = typeof expected.country === 'string' ? expected.country.trim().toLowerCase() : null;
+    checks.push(check('country filter matches intent', actual === wanted, `expected ${expected.country === null ? 'null' : `"${expected.country}"`}, received ${actual === null ? 'null' : `"${value.country}"`}`));
+  }
+  for (const field of ['date_from', 'date_to']) {
+    if (field in expected) {
+      checks.push(check(`${field} matches intent`, value?.[field] === expected[field], `expected ${expected[field] === null ? 'null' : expected[field]}, received ${value?.[field] === null ? 'null' : value?.[field]}`));
+    }
+  }
+
+  // Keyword wording is the model's to choose; only the presence of an anchor
+  // term is asserted, so a reasonable synonym set is never marked wrong.
+  if (Array.isArray(expected.mustIncludeKeyword) && Array.isArray(keywords)) {
+    const haystack = keywords.join(' ').toLowerCase();
+    const missing = expected.mustIncludeKeyword.filter((term) => !haystack.includes(String(term).toLowerCase()));
+    checks.push(check('keywords cover the query subject', missing.length === 0, missing.length === 0 ? 'anchor terms present' : `missing: ${missing.join(', ')}`));
+  }
+
+  return { passed: checks.every((item) => item.passed), checks, value };
+}
+
 export function summarizeChecks(result) {
   return result.checks
     .filter((item) => !item.passed)

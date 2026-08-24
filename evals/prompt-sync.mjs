@@ -16,23 +16,26 @@ const API_DIR = path.join(HERE, '..', 'frontend', 'api');
 const PROMPTS_DIR = path.join(HERE, 'prompts');
 
 const PAIRS = [
-  { endpoint: 'personal', source: 'recommendations.ts', copy: 'personal-system.md' },
-  { endpoint: 'community', source: 'community-recommendations.ts', copy: 'community-system.md' },
+  { endpoint: 'personal', source: 'recommendations.ts', constant: 'SYSTEM_PROMPT', copy: 'personal-system.md' },
+  { endpoint: 'community', source: 'community-recommendations.ts', constant: 'SYSTEM_PROMPT', copy: 'community-system.md' },
+  { endpoint: 'search', source: 'search.ts', constant: 'SEARCH_SYSTEM_PROMPT', copy: 'search-system.md' },
 ];
 
-function extractSystemPrompt(sourcePath) {
+function extractSystemPrompt(sourcePath, constant) {
   const source = fs.readFileSync(sourcePath, 'utf8');
-  const match = source.match(/const SYSTEM_PROMPT = `([\s\S]*?)`;/);
-  if (!match) throw new Error(`could not find SYSTEM_PROMPT in ${sourcePath}`);
+  // Anchored to a line start so SEARCH_SYSTEM_PROMPT cannot be matched by a
+  // pattern meant for SYSTEM_PROMPT.
+  const match = source.match(new RegExp(`^const ${constant} = \`([\\s\\S]*?)\`;`, 'm'));
+  if (!match) throw new Error(`could not find ${constant} in ${sourcePath}`);
   return match[1];
 }
 
 export function checkPromptSync() {
-  return PAIRS.map(({ endpoint, source, copy }) => {
+  return PAIRS.map(({ endpoint, source, constant, copy }) => {
     const sourcePath = path.join(API_DIR, source);
     const copyPath = path.join(PROMPTS_DIR, copy);
     try {
-      const shipped = extractSystemPrompt(sourcePath).trim();
+      const shipped = extractSystemPrompt(sourcePath, constant).trim();
       const evaluated = fs.readFileSync(copyPath, 'utf8').trim();
       return {
         endpoint,
