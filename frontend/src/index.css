@@ -56,18 +56,6 @@ code {
   background: #94a3b8;
 }
 
-/* Keep Mapbox popup, style our content to fit */
-.mapboxgl-popup-content {
-  padding: 0 !important;  /* Remove default padding */
-  min-width: 280px;
-  max-width: 450px;
-}
-
-/* Hide default close button since we have our own */
-.mapboxgl-popup-close-button {
-  display: none;
-}
-
 /* Nobody's animation is load-bearing here -- spinners, hovers, and the map
    sidebar slide are all decorative -- so reduced motion switches them off
    rather than swapping in a quieter variant. */
