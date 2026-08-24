@@ -184,7 +184,7 @@ const Landing: React.FC = () => {
                   <span>Upload Your First Photo</span>
                 </Link>
                 <Link
-                  to="/app"
+                  to="/public"
                   className={button(
                     'primary',
                     'lg',
