@@ -19,13 +19,14 @@ const FLY_DURATION_MS = 1800;
 const PHOTO_REVEAL_DELAY_MS = FLY_DURATION_MS + 100;
 const MAX_LOCATIONS = 8;
 const INITIAL_VIEW_STATE = { longitude: 0, latitude: 20, zoom: 1.25 };
-// Matches PhotoPopupCard's own w-40 (10rem). Mapbox's Popup defaults
-// maxWidth to 240px, which is wider than this card -- since the popup's
-// content div stretches to fill that cap (it's a flex child of a
-// flex-direction: column container, whose default align-items: stretch
-// applies on the cross/horizontal axis), the extra ~80px rendered as a
-// blank gray box next to the card. Passing maxWidth here caps it at
-// exactly the card's own width, so nothing is left to stretch into.
+// Matches PhotoPopupCard's own w-40 (10rem). index.css used to carry a
+// `.mapboxgl-popup-content { min-width: 280px; max-width: 450px; }` rule
+// from a since-removed popup feature -- it was dead (this component is the
+// only Popup user in the codebase) but still applied globally, and
+// min-width always wins over width regardless of !important, so it forced
+// every popup wider than this card until that rule was deleted. Passing
+// maxWidth here is a lightweight belt-and-suspenders cap now that nothing
+// is fighting it.
 const POPUP_WIDTH_PX = 160;
 
 interface Location {
