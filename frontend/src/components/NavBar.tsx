@@ -1,11 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Camera, LogIn, LogOut, Upload } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { button, focusRing } from './ui/buttonStyles.ts';
 
+const segment =
+  `rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:py-1.5 sm:text-sm ${focusRing}`;
+const segmentActive = 'bg-white text-slate-900 shadow-sm';
+const segmentInactive = 'text-slate-600 hover:text-slate-900';
+
 const NavBar: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { pathname } = useLocation();
 
   return (
     <>
@@ -30,12 +36,42 @@ const NavBar: React.FC = () => {
               </span>
             </Link>
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <Link
-                to="/app"
-                className={`hidden sm:inline-block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors ${focusRing}`}
-              >
-                Explore Map
-              </Link>
+              {user ? (
+                // Signed in: a two-way switch, not one link that used to point
+                // somewhere different depending on auth state. Both maps are a
+                // single click away and the current one is always visible.
+                <div
+                  role="group"
+                  aria-label="Choose which map to view"
+                  className="flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5"
+                >
+                  <Link
+                    to="/public"
+                    aria-current={pathname === '/public' ? 'page' : undefined}
+                    className={`${segment} ${pathname === '/public' ? segmentActive : segmentInactive}`}
+                  >
+                    Public
+                  </Link>
+                  <Link
+                    to="/app"
+                    aria-current={pathname === '/app' ? 'page' : undefined}
+                    className={`${segment} ${pathname === '/app' ? segmentActive : segmentInactive}`}
+                  >
+                    <span className="sm:hidden">Mine</span>
+                    <span className="hidden sm:inline">My Map</span>
+                  </Link>
+                </div>
+              ) : (
+                // Signed out: there is no private map to switch to, so this is
+                // always the public map, not the /app route (which happens to
+                // render public content today only because there's no user).
+                <Link
+                  to="/public"
+                  className={`rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors ${focusRing}`}
+                >
+                  Explore Map
+                </Link>
+              )}
               <Link to="/upload" className={button('secondary', 'sm')}>
                 <Upload className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Upload Photo</span>
