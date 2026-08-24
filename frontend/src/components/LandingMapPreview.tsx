@@ -148,7 +148,7 @@ const LandingMapPreview: React.FC = () => {
   const hasLocations = locations !== null && locations.length > 0;
 
   return (
-    <div className="relative h-80 overflow-hidden rounded-3xl border border-slate-200 shadow-card sm:h-[28rem] lg:h-[34rem]">
+    <div className="relative h-96 overflow-hidden rounded-3xl border border-slate-200 shadow-card sm:h-[32rem] lg:h-[38rem]">
       {isLoading ? (
         <div className="h-full w-full animate-pulse bg-gradient-to-br from-slate-100 to-slate-200" />
       ) : hasLocations ? (

@@ -14,7 +14,7 @@ import { button } from '../components/ui/buttonStyles.ts';
 const LandingMapPreview = React.lazy(() => import('../components/LandingMapPreview.tsx'));
 
 const mapPreviewSkeletonClasses =
-  'h-80 sm:h-[28rem] lg:h-[34rem] rounded-3xl border border-slate-200 shadow-card animate-pulse bg-gradient-to-br from-slate-100 to-slate-200';
+  'h-96 sm:h-[32rem] lg:h-[38rem] rounded-3xl border border-slate-200 shadow-card animate-pulse bg-gradient-to-br from-slate-100 to-slate-200';
 
 const Landing: React.FC = () => {
   const { user } = useAuth();
