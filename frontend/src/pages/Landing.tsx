@@ -1,11 +1,20 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Camera, MapPin, Globe, Upload, ArrowRight, Users, LogIn } from 'lucide-react';
+import { Camera, Upload, ArrowRight, LogIn, Sparkles, Search, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import CommunityRecommendationsPanel from '../components/CommunityRecommendationsPanel.tsx';
 import NavBar from '../components/NavBar.tsx';
 import Card from '../components/ui/Card.tsx';
 import { button } from '../components/ui/buttonStyles.ts';
+
+// Mapbox GL is a heavy dependency this page doesn't need for its first
+// paint -- lazy-loading it here means the headline and nav render before it
+// finishes downloading, instead of blocking on a library only the preview
+// card below actually uses.
+const LandingMapPreview = React.lazy(() => import('../components/LandingMapPreview.tsx'));
+
+const mapPreviewSkeletonClasses =
+  'h-72 sm:h-96 rounded-3xl border border-slate-200 shadow-card animate-pulse bg-gradient-to-br from-slate-100 to-slate-200';
 
 const Landing: React.FC = () => {
   const { user } = useAuth();
@@ -17,77 +26,39 @@ const Landing: React.FC = () => {
       <main id="main-content">
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-indigo-50/60 to-white">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="bg-indigo-100 p-3 rounded-2xl">
-                <Camera className="h-10 w-10 text-indigo-600" aria-hidden="true" />
-              </div>
-            </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 text-balance">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-14 text-center">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-5 text-balance">
               Your Travel Memories,<span className="text-indigo-600"> Mapped</span>
             </h1>
-            <p className="text-lg md:text-xl text-slate-600 mb-12 max-w-2xl mx-auto text-pretty">
-              <span translate="no">MercuryMap</span> displays your travel photos on a map, allowing
-              them to tell better stories. Showcase your travel highlights and share photos and
-              destinations with fellow travelers.
+            <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto text-pretty">
+              Real travel photos from around the world, pinned to an interactive map you can drop
+              into right now — no account needed.
             </p>
 
-            <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto text-left">
-              <Card className="p-6 flex flex-col items-start">
-                <div className="bg-indigo-50 p-2.5 rounded-xl mb-4">
-                  <Globe className="h-6 w-6 text-indigo-600" aria-hidden="true" />
-                </div>
-                <h2 className="text-lg font-bold text-slate-900 mb-1 text-balance">
-                  Explore the Public Map
-                </h2>
-                <p className="text-slate-600 text-sm mb-5 text-pretty">
-                  Check out the public <span translate="no">MercuryMap</span> with photos shared by
-                  the creator — no account needed.
-                </p>
-                <Link to="/public" className={button('primary', 'md')}>
-                  <span>Explore Public Map</span>
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </Card>
+            <Suspense fallback={<div className={mapPreviewSkeletonClasses} />}>
+              <LandingMapPreview />
+            </Suspense>
 
-              <Card className="p-6 flex flex-col items-start">
-                <div className="bg-emerald-50 p-2.5 rounded-xl mb-4">
-                  <Upload className="h-6 w-6 text-emerald-600" aria-hidden="true" />
-                </div>
-                <h2 className="text-lg font-bold text-slate-900 mb-1 text-balance">
-                  Upload to Your Personal Map
-                </h2>
-                <p className="text-slate-600 text-sm mb-5 text-pretty">
-                  Sign in to create your own private travel map. Upload your photos and see your
-                  journeys visualized.
-                </p>
-                {user ? (
-                  <Link
-                    to="/upload"
-                    className={button(
-                      'primary',
-                      'md',
-                      'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 focus-visible:ring-emerald-500'
-                    )}
-                  >
-                    <span>Upload to My Map</span>
-                    <Upload className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                ) : (
-                  <Link
-                    to="/login"
-                    className={button(
-                      'primary',
-                      'md',
-                      'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 focus-visible:ring-emerald-500'
-                    )}
-                  >
-                    <span>Sign In to Upload</span>
-                    <LogIn className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                )}
-              </Card>
-            </div>
+            <p className="mt-5 text-sm text-slate-500">
+              Have your own trips to add?{' '}
+              {user ? (
+                <Link
+                  to="/upload"
+                  className="inline-flex items-center gap-1 rounded px-1 font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
+                >
+                  <span>Upload a photo</span>
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1 rounded px-1 font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
+                >
+                  <span>Sign in to upload</span>
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              )}
+            </p>
           </div>
         </section>
 
@@ -106,51 +77,51 @@ const Landing: React.FC = () => {
                 id="features-heading"
                 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 text-balance"
               >
-                Maps Tell Better Travel Stories
+                Built on Claude, Not Just a Map
               </h2>
               <p className="text-lg text-slate-600 max-w-2xl mx-auto text-pretty">
-                From interactive maps to seamless photo sharing, <span translate="no">MercuryMap</span>{' '}
-                makes it easy to document and discover travel experiences worldwide.
+                <span translate="no">MercuryMap</span> uses Claude for the parts that need judgment,
+                and checks its own homework before shipping.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="text-center p-8">
                 <div className="bg-indigo-50 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                  <MapPin className="h-7 w-7 text-indigo-600" aria-hidden="true" />
+                  <Sparkles className="h-7 w-7 text-indigo-600" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-2 text-balance">
-                  Interactive Mapping
+                  AI Trip Recommendations
                 </h3>
                 <p className="text-slate-600 text-sm text-pretty">
-                  Upload photos with precise location data and explore a beautiful interactive map
-                  powered by Mapbox with search and clustering features.
+                  Claude reads a photo history and suggests real destinations with map coordinates
+                  and a grounded reason — checked against a live geocoder, not hallucinated.
                 </p>
               </Card>
 
               <Card className="text-center p-8">
                 <div className="bg-emerald-50 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                  <Camera className="h-7 w-7 text-emerald-600" aria-hidden="true" />
+                  <Search className="h-7 w-7 text-emerald-600" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-2 text-balance">
-                  Seamless Upload
+                  Natural-Language Photo Search
                 </h3>
                 <p className="text-slate-600 text-sm text-pretty">
-                  Drag and drop your travel photos with location autocomplete. Add descriptions and
-                  dates to create rich travel memories.
+                  Search "espania" or "Inca" and an LLM query parser expands it into keywords and
+                  filters, which Postgres full-text search actually retrieves against.
                 </p>
               </Card>
 
               <Card className="text-center p-8">
                 <div className="bg-amber-50 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5">
-                  <Users className="h-7 w-7 text-amber-600" aria-hidden="true" />
+                  <ShieldCheck className="h-7 w-7 text-amber-600" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 mb-2 text-balance">
-                  Global Community
+                  Evaluated, Not Vibe-Coded
                 </h3>
                 <p className="text-slate-600 text-sm text-pretty">
-                  Discover photos from travelers around the world. Explore destinations through the
-                  eyes of the community.
+                  A 20-case eval suite with deterministic checks and an LLM judge runs in CI on
+                  every push, because a hallucinated map pin is a bug, not a fun fact.
                 </p>
               </Card>
             </div>
@@ -165,13 +136,13 @@ const Landing: React.FC = () => {
                 id="cta-heading"
                 className="text-3xl md:text-4xl font-bold text-white mb-4 text-balance"
               >
-                Ready to Start Your Journey?
+                Have Photos to Share?
               </h2>
               <p className="text-lg text-indigo-100 mb-8 max-w-xl mx-auto text-pretty">
-                Join travelers from around the world in sharing and discovering amazing
-                destinations. Let Mercury guide your way.
+                Sign in to add your own trips — keep them on your private map, or share them with
+                everyone on the public one.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {user ? (
                 <Link
                   to="/upload"
                   className={button(
@@ -181,20 +152,21 @@ const Landing: React.FC = () => {
                   )}
                 >
                   <Upload className="h-5 w-5" aria-hidden="true" />
-                  <span>Upload Your First Photo</span>
+                  <span>Upload a Photo</span>
                 </Link>
+              ) : (
                 <Link
-                  to="/public"
+                  to="/login"
                   className={button(
                     'primary',
                     'lg',
-                    'bg-indigo-500/40 text-white border border-white/40 shadow-none hover:bg-indigo-500/60 active:bg-indigo-500/80 focus-visible:ring-white focus-visible:ring-offset-indigo-600'
+                    'bg-white text-indigo-600 shadow-none hover:bg-indigo-50 active:bg-indigo-100 focus-visible:ring-white focus-visible:ring-offset-indigo-600'
                   )}
                 >
-                  <Globe className="h-5 w-5" aria-hidden="true" />
-                  <span>Explore the World</span>
+                  <LogIn className="h-5 w-5" aria-hidden="true" />
+                  <span>Sign In to Get Started</span>
                 </Link>
-              </div>
+              )}
             </div>
           </div>
         </section>
