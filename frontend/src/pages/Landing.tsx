@@ -31,8 +31,8 @@ const Landing: React.FC = () => {
               Your Travel Memories,<span className="text-indigo-600"> Mapped</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto text-pretty">
-              Real travel photos from around the world, pinned to an interactive map you can drop
-              into right now — no account needed.
+              Your photos belong on a map, not lost in a camera roll. See every trip you’ve taken —
+              and exactly where each memory happened.
             </p>
 
             <Suspense fallback={<div className={mapPreviewSkeletonClasses} />}>
