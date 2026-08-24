@@ -181,7 +181,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
             setHighlightedIndex(-1);
           }, 200);
         }}
-        className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        className="w-full px-3 py-2 pr-10 border border-sand-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clay-500 focus:border-clay-500"
         placeholder={placeholder}
       />
 
@@ -190,7 +190,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
         role="listbox"
         aria-label="Location suggestions"
         hidden={!expanded}
-        className="absolute top-full left-0 right-0 z-50 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-auto"
+        className="absolute top-full left-0 right-0 z-50 bg-white border border-sand-200 rounded-xl shadow-float max-h-48 overflow-auto"
       >
         {suggestions.map((item, index) => (
           <li
@@ -207,11 +207,11 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
             }}
             onMouseEnter={() => setHighlightedIndex(index)}
             className={`p-2 cursor-pointer ${
-              index === highlightedIndex ? 'bg-indigo-50' : 'bg-white'
-            } hover:bg-slate-50 border-b border-slate-100 last:border-b-0`}
+              index === highlightedIndex ? 'bg-clay-50' : 'bg-white'
+            } hover:bg-sand-50 border-b border-sand-100 last:border-b-0`}
           >
-            <div className="font-medium text-slate-900 break-words">{item.formatted}</div>
-            <div className="text-sm text-slate-500 break-words">
+            <div className="font-medium text-sand-900 break-words">{item.formatted}</div>
+            <div className="text-sm text-sand-500 break-words">
               {item.components.city && item.components.country
                 ? `${item.components.city}, ${item.components.country}`
                 : item.formatted
@@ -224,24 +224,24 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
       {!loading && error && (
         <div
           role="status"
-          className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-red-200 rounded-xl shadow-lg px-3 py-2 flex items-start gap-2"
+          className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-berry-200 rounded-xl shadow-float px-3 py-2 flex items-start gap-2"
         >
-          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
-          <span className="text-sm text-red-700">{error}</span>
+          <AlertCircle className="h-4 w-4 text-berry-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="text-sm text-berry-700">{error}</span>
         </div>
       )}
 
       {!loading && !error && searched && suggestions.length === 0 && (
         <div
           role="status"
-          className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2"
+          className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-sand-200 rounded-xl shadow-float px-3 py-2"
         >
-          <span className="text-sm text-slate-500">No matching places found.</span>
+          <span className="text-sm text-sand-500">No matching places found.</span>
         </div>
       )}
 
       {loading && (
-        <div className="absolute right-3 top-2 text-indigo-600">
+        <div className="absolute right-3 top-2 text-clay-600">
           <Spinner label="Searching for locations…" className="h-4 w-4" />
         </div>
       )}

@@ -66,7 +66,7 @@ const PhotoPopupCard: React.FC<{ photo: Photo }> = ({ photo }) => {
 
   return (
     <div
-      className={`w-40 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5 transition-all duration-300 ease-out ${
+      className={`w-40 overflow-hidden rounded-xl bg-white shadow-float ring-1 ring-sand-900/5 transition-all duration-300 ease-out ${
         visible ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
       }`}
     >
@@ -74,11 +74,11 @@ const PhotoPopupCard: React.FC<{ photo: Photo }> = ({ photo }) => {
         src={photo.file_url}
         alt={photo.title || 'Travel photo'}
         width={200}
-        className="h-24 w-full bg-slate-200 object-cover"
+        className="h-24 w-full bg-sand-200 object-cover"
       />
       <div className="p-2">
-        <p className="truncate text-xs font-semibold text-slate-900">{photo.title || 'Untitled'}</p>
-        <p className="truncate text-[11px] text-slate-500">{photo.country}</p>
+        <p className="truncate text-xs font-semibold text-sand-900">{photo.title || 'Untitled'}</p>
+        <p className="truncate text-[11px] text-sand-500">{photo.country}</p>
       </div>
     </div>
   );
@@ -148,9 +148,9 @@ const LandingMapPreview: React.FC = () => {
   const hasLocations = locations !== null && locations.length > 0;
 
   return (
-    <div className="relative h-96 overflow-hidden rounded-3xl border border-slate-200 shadow-card sm:h-[32rem] lg:h-[38rem]">
+    <div className="relative h-96 overflow-hidden rounded-3xl border border-sand-200 shadow-card sm:h-[32rem] lg:h-[38rem]">
       {isLoading ? (
-        <div className="h-full w-full animate-pulse bg-gradient-to-br from-slate-100 to-slate-200" />
+        <div className="h-full w-full animate-pulse bg-gradient-to-br from-sand-100 to-sand-200" />
       ) : hasLocations ? (
         // Decorative: the map is a preview, not a tool. All the real
         // interaction lives behind the CTA below, which stays outside this
@@ -162,7 +162,7 @@ const LandingMapPreview: React.FC = () => {
             ref={mapRef}
             initialViewState={INITIAL_VIEW_STATE}
             style={{ width: '100%', height: '100%' }}
-            mapStyle="mapbox://styles/mapbox/streets-v11"
+            mapStyle="mapbox://styles/mapbox/outdoors-v12"
             mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
             dragPan={false}
             dragRotate={false}
@@ -175,7 +175,7 @@ const LandingMapPreview: React.FC = () => {
           >
             {locations.map((location) => (
               <Marker key={location.key} longitude={location.longitude} latitude={location.latitude} anchor="bottom">
-                <span className="block h-3.5 w-3.5 rounded-full border-2 border-white bg-indigo-600 shadow-card" />
+                <span className="block h-3.5 w-3.5 rounded-full border-2 border-white bg-clay-600 shadow-card" />
               </Marker>
             ))}
 
@@ -201,7 +201,7 @@ const LandingMapPreview: React.FC = () => {
           </Map>
         </div>
       ) : (
-        <div className="h-full w-full bg-gradient-to-br from-indigo-50 to-white" />
+        <div className="h-full w-full bg-gradient-to-br from-clay-50 to-white" />
       )}
 
       <div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/50 via-black/5 to-transparent p-6 sm:p-8">

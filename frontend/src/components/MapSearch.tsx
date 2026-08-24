@@ -147,7 +147,7 @@ const MapSearch: React.FC<MapSearchProps> = ({
           Search the map for a place
         </label>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-slate-400" aria-hidden="true" />
+          <Search className="h-5 w-5 text-sand-400" aria-hidden="true" />
         </div>
         <input
           id={inputId}
@@ -167,11 +167,11 @@ const MapSearch: React.FC<MapSearchProps> = ({
           onKeyDown={(e) => {
             if (e.key === 'Escape') setShowSuggestions(false);
           }}
-          className="block w-full pl-10 pr-10 py-2 border border-slate-300 rounded-lg leading-5 bg-white shadow-card placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="block w-full pl-10 pr-10 py-2 border border-sand-300 rounded-lg leading-5 bg-white shadow-card placeholder-sand-500 focus:outline-none focus:placeholder-sand-400 focus:ring-2 focus:ring-clay-500 focus:border-clay-500"
           placeholder={placeholder}
         />
         {loading && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-indigo-600">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-clay-600">
             <Spinner label="Searching for places…" className="h-4 w-4" />
           </div>
         )}
@@ -182,25 +182,25 @@ const MapSearch: React.FC<MapSearchProps> = ({
         role="listbox"
         aria-label="Place suggestions"
         hidden={!expanded}
-        className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-auto"
+        className="absolute z-10 w-full mt-1 bg-white border border-sand-200 rounded-xl shadow-float max-h-60 overflow-auto"
       >
         {suggestions.map((feature) => (
           <li key={feature.id} role="option" aria-selected={false}>
             <button
               type="button"
               onClick={() => handleSelect(feature)}
-              className={`w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 ${focusRing} focus-visible:ring-inset focus-visible:ring-offset-0`}
+              className={`w-full text-left px-4 py-3 hover:bg-sand-50 border-b border-sand-100 last:border-b-0 ${focusRing} focus-visible:ring-inset focus-visible:ring-offset-0`}
             >
               <div className="flex items-start">
-                <MapPin className="h-4 w-4 text-slate-400 mt-0.5 mr-2 flex-shrink-0" aria-hidden="true" />
+                <MapPin className="h-4 w-4 text-sand-400 mt-0.5 mr-2 flex-shrink-0" aria-hidden="true" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-slate-900 truncate">
+                  <div className="font-medium text-sand-900 truncate">
                     {feature.text}
                   </div>
-                  <div className="text-sm text-slate-500 truncate">
+                  <div className="text-sm text-sand-500 truncate">
                     {feature.place_name}
                   </div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-sand-400">
                     {getLocationType(feature)}
                   </div>
                 </div>
@@ -213,19 +213,19 @@ const MapSearch: React.FC<MapSearchProps> = ({
       {showSuggestions && !loading && error && (
         <div
           role="status"
-          className="absolute z-10 w-full mt-1 bg-white border border-red-200 rounded-xl shadow-lg px-3 py-2 flex items-start gap-2"
+          className="absolute z-10 w-full mt-1 bg-white border border-berry-200 rounded-xl shadow-float px-3 py-2 flex items-start gap-2"
         >
-          <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
-          <span className="text-sm text-red-700">{error}</span>
+          <AlertCircle className="h-4 w-4 text-berry-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+          <span className="text-sm text-berry-700">{error}</span>
         </div>
       )}
 
       {showSuggestions && !loading && !error && searched && suggestions.length === 0 && (
         <div
           role="status"
-          className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2"
+          className="absolute z-10 w-full mt-1 bg-white border border-sand-200 rounded-xl shadow-float px-3 py-2"
         >
-          <span className="text-sm text-slate-500">No matching places found.</span>
+          <span className="text-sm text-sand-500">No matching places found.</span>
         </div>
       )}
     </div>

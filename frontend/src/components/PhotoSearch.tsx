@@ -77,16 +77,16 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2
             id="photo-search-heading"
-            className="text-xl font-bold text-slate-900 flex items-center"
+            className="font-display text-xl font-bold text-sand-900 flex items-center"
           >
-            <Search className="h-5 w-5 mr-2 text-indigo-600" aria-hidden="true" />
+            <Search className="h-5 w-5 mr-2 text-clay-600" aria-hidden="true" />
             Search public photos
           </h2>
-          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
+          <span className="inline-flex items-center rounded-full bg-sea-50 px-2.5 py-0.5 text-xs font-semibold text-sea-700 ring-1 ring-inset ring-sea-100">
             AI-assisted
           </span>
         </div>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-sand-500">
           Describe a place, mood, activity, or time and we’ll find matching public photos.
         </p>
       </div>
@@ -107,7 +107,7 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
           }}
           placeholder={placeholder}
           maxLength={500}
-          className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+          className="min-w-0 flex-1 rounded-xl border border-sand-300 bg-white px-4 py-3 text-sand-900 shadow-card outline-none transition focus:border-clay-500 focus:ring-2 focus:ring-clay-500/20"
           aria-describedby="photo-search-help"
           aria-invalid={Boolean(error || emptyQuery)}
         />
@@ -120,13 +120,13 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
           <span>{loading ? 'Searching…' : 'Search'}</span>
         </button>
       </form>
-      <p id="photo-search-help" className="text-xs text-slate-400">
+      <p id="photo-search-help" className="text-xs text-sand-400">
         Search works across photo names, places, descriptions, and dates.
       </p>
 
       {emptyQuery && (
-        <p role="status" className="flex items-center gap-2 text-sm text-slate-600">
-          <Search className="h-4 w-4 text-indigo-500" aria-hidden="true" />
+        <p role="status" className="flex items-center gap-2 text-sm text-sand-600">
+          <Search className="h-4 w-4 text-clay-500" aria-hidden="true" />
           Enter a search phrase to find photos.
         </p>
       )}
@@ -134,7 +134,7 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
       {error && (
         <div
           role="alert"
-          className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="flex items-start gap-2 rounded-xl border border-berry-200 bg-berry-50 px-4 py-3 text-sm text-berry-700"
         >
           <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
           <span>{error}</span>
@@ -144,7 +144,7 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
       {result?.degraded && (
         <div
           role="status"
-          className="flex items-start gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800"
+          className="flex items-start gap-2 rounded-xl border border-sea-100 bg-sea-50 px-4 py-3 text-sm text-sea-800"
         >
           <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
           <span>
@@ -156,9 +156,9 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
 
       {searched && !loading && !error && !hasResults && (
         <Card className="px-5 py-8 text-center">
-          <Search className="mx-auto h-8 w-8 text-slate-300" aria-hidden="true" />
-          <p className="mt-3 font-semibold text-slate-700">No matching photos found.</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <Search className="mx-auto h-8 w-8 text-sand-300" aria-hidden="true" />
+          <p className="mt-3 font-semibold text-sand-700">No matching photos found.</p>
+          <p className="mt-1 text-sm text-sand-500">
             Try a broader place, activity, or description.
           </p>
         </Card>
@@ -177,13 +177,13 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
                   src={photo.file_url}
                   alt={photo.title || 'Travel photo'}
                   width={640}
-                  className="h-48 w-full bg-slate-200 object-cover"
+                  className="h-48 w-full bg-sand-200 object-cover"
                 />
                 <div className="min-w-0 p-4">
-                  <h3 className="truncate font-semibold text-slate-900">
+                  <h3 className="truncate font-semibold text-sand-900">
                     {photo.title || 'Untitled photo'}
                   </h3>
-                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-sand-500">
                     {photo.country && (
                       <span className="inline-flex min-w-0 items-center gap-1">
                         <MapPin className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
@@ -196,7 +196,7 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
                     </span>
                   </div>
                   {photo.description && (
-                    <p className="mt-3 line-clamp-2 break-words text-sm text-slate-600">
+                    <p className="mt-3 line-clamp-2 break-words text-sm text-sand-600">
                       {photo.description}
                     </p>
                   )}
@@ -207,7 +207,7 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
             return (
               <li key={photo.id}>
                 {onPhotoSelect ? (
-                  <Card className="overflow-hidden transition-shadow hover:shadow-lg">
+                  <Card className="overflow-hidden transition-shadow hover:shadow-lift">
                     <button
                       type="button"
                       onClick={(event) => onPhotoSelect(photo, event.currentTarget)}

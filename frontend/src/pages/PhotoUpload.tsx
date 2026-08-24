@@ -21,7 +21,7 @@ const coordFormat = new Intl.NumberFormat(undefined, {
 
 const fieldClasses =
   'mt-1 block w-full px-3 py-2 border rounded-lg sm:text-sm ' +
-  'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500';
+  'focus:outline-none focus:ring-2 focus:ring-clay-500 focus:border-clay-500';
 
 const PhotoUpload: React.FC = () => {
   const { user } = useAuth();
@@ -160,13 +160,13 @@ const PhotoUpload: React.FC = () => {
   const destination = uploadToPublic ? 'the Public' : 'Your Private';
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-sand-50">
       <NavBar />
 
       <main id="main-content" className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card className="p-6 sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <h1 className="text-xl font-bold text-slate-900 text-balance">
+            <h1 className="font-display text-xl font-bold text-sand-900 text-balance">
               {user ? (
                 <>
                   Upload Photo to {destination} <span translate="no">MercuryMap</span>
@@ -178,7 +178,7 @@ const PhotoUpload: React.FC = () => {
               )}
             </h1>
             {user && (
-              <div className="flex items-center gap-2 text-sm text-slate-500 min-w-0">
+              <div className="flex items-center gap-2 text-sm text-sand-500 min-w-0">
                 <User className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                 <span className="truncate">{user.email}</span>
               </div>
@@ -194,16 +194,16 @@ const PhotoUpload: React.FC = () => {
                   checked={uploadToPublic}
                   onChange={() => setUploadToPublic(!uploadToPublic)}
                   aria-describedby="upload-to-public-hint"
-                  className={`h-4 w-4 rounded border-slate-300 text-indigo-600 ${focusRing}`}
+                  className={`h-4 w-4 rounded border-sand-300 text-clay-600 ${focusRing}`}
                 />
-                <span className="ml-2 text-sm text-slate-700">
+                <span className="ml-2 text-sm text-sand-700">
                   Upload to{' '}
                   <span className="font-semibold">
                     public <span translate="no">MercuryMap</span>
                   </span>
                 </span>
               </label>
-              <p id="upload-to-public-hint" className="text-xs text-slate-500 mt-1">
+              <p id="upload-to-public-hint" className="text-xs text-sand-500 mt-1">
                 Visible to everyone on the public map. Leave it unchecked to keep this in your own
                 private map.
               </p>
@@ -211,13 +211,13 @@ const PhotoUpload: React.FC = () => {
           )}
 
           {!user && (
-            <div className="mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-              <p className="text-sm text-indigo-800 mb-2">
+            <div className="mb-6 p-4 bg-clay-50 border border-clay-100 rounded-xl">
+              <p className="text-sm text-clay-800 mb-2">
                 Sign in to upload photos. Uploads aren’t possible while signed out.
               </p>
               <Link
                 to="/login"
-                className={`inline-flex items-center gap-2 rounded px-1 text-indigo-600 hover:text-indigo-700 hover:underline text-sm font-medium ${focusRing}`}
+                className={`inline-flex items-center gap-2 rounded px-1 text-clay-600 hover:text-clay-700 hover:underline text-sm font-medium ${focusRing}`}
               >
                 <LogIn className="h-4 w-4" aria-hidden="true" />
                 <span>Sign In</span>
@@ -227,7 +227,7 @@ const PhotoUpload: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <div>
-              <span id="photo-label" className="block text-sm font-medium text-slate-700 mb-2">
+              <span id="photo-label" className="block text-sm font-medium text-sand-700 mb-2">
                 Photo
               </span>
               {!selectedFile ? (
@@ -240,21 +240,21 @@ const PhotoUpload: React.FC = () => {
                   })}
                   className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${focusRing} ${
                     errors.file
-                      ? 'border-red-400 bg-red-50'
+                      ? 'border-berry-400 bg-berry-50'
                       : isDragActive
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-slate-300 hover:border-slate-400 hover:bg-slate-50'
+                        ? 'border-clay-500 bg-clay-50'
+                        : 'border-sand-300 hover:border-sand-400 hover:bg-sand-50'
                   }`}
                 >
                   {/* react-dropzone puts a real <input type="file"> here and
                       wires the root for keyboard activation, so Enter/Space on
                       the zone opens the picker -- drag is never the only way. */}
                   <input {...getInputProps()} aria-labelledby="photo-label" />
-                  <FileImage className="h-10 w-10 text-slate-400 mx-auto mb-4" aria-hidden="true" />
+                  <FileImage className="h-10 w-10 text-sand-400 mx-auto mb-4" aria-hidden="true" />
                   {isDragActive ? (
-                    <p className="text-indigo-600">Drop the photo here…</p>
+                    <p className="text-clay-600">Drop the photo here…</p>
                   ) : (
-                    <p className="text-slate-600 text-sm">
+                    <p className="text-sand-600 text-sm">
                       Drag and drop a photo here, or click to select
                     </p>
                   )}
@@ -266,25 +266,25 @@ const PhotoUpload: React.FC = () => {
                     alt={`Preview of ${selectedFile.name}`}
                     width={1200}
                     height={800}
-                    className="w-full h-64 object-cover rounded-xl bg-slate-100"
+                    className="w-full h-64 object-cover rounded-xl bg-sand-100"
                   />
                   <button
                     type="button"
                     onClick={removeFile}
                     aria-label={`Remove ${selectedFile.name}`}
-                    className={`absolute top-2 right-2 p-1.5 bg-white text-slate-700 rounded-full shadow-card hover:bg-slate-50 active:bg-slate-100 transition-colors ${focusRing}`}
+                    className={`absolute top-2 right-2 p-1.5 bg-white text-sand-700 rounded-full shadow-card hover:bg-sand-50 active:bg-sand-100 transition-colors ${focusRing}`}
                   >
                     <X className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
               )}
               {errors.file ? (
-                <p id="photo-error" className="mt-1.5 text-sm text-red-600">
+                <p id="photo-error" className="mt-1.5 text-sm text-berry-600">
                   {errors.file}
                 </p>
               ) : (
                 !selectedFile && (
-                  <p id="photo-hint" className="mt-1.5 text-xs text-slate-500">
+                  <p id="photo-hint" className="mt-1.5 text-xs text-sand-500">
                     JPG, PNG, GIF, or WebP.
                   </p>
                 )
@@ -292,7 +292,7 @@ const PhotoUpload: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="description" className="block text-sm font-medium text-sand-700">
                 Description
               </label>
               <textarea
@@ -302,13 +302,13 @@ const PhotoUpload: React.FC = () => {
                 onChange={handleChange}
                 rows={3}
                 maxLength={500}
-                className={`${fieldClasses} border-slate-300`}
+                className={`${fieldClasses} border-sand-300`}
                 placeholder="A rainy morning in the old town…"
               />
             </div>
 
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="location" className="block text-sm font-medium text-sand-700 mb-1">
                 Location
               </label>
               <LocationSearch
@@ -327,19 +327,19 @@ const PhotoUpload: React.FC = () => {
                 placeholder="Search for a city or country…"
               />
               {errors.location && (
-                <p id="location-error" className="mt-1.5 text-sm text-red-600">
+                <p id="location-error" className="mt-1.5 text-sm text-berry-600">
                   {errors.location}
                 </p>
               )}
               {selectedLocation && (
                 <div
                   role="status"
-                  className="mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl"
+                  className="mt-2 p-3 bg-sea-50 border border-sea-200 rounded-xl"
                 >
-                  <p className="text-sm text-emerald-800 break-words">
+                  <p className="text-sm text-sea-800 break-words">
                     Selected: {selectedLocation.city}, {selectedLocation.country}
                   </p>
-                  <p className="text-xs text-emerald-600 tabular-nums">
+                  <p className="text-xs text-sea-600 tabular-nums">
                     Coordinates: {coordFormat.format(selectedLocation.lat)},{' '}
                     {coordFormat.format(selectedLocation.lng)}
                   </p>
@@ -348,7 +348,7 @@ const PhotoUpload: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="taken_date" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="taken_date" className="block text-sm font-medium text-sand-700">
                 Date Taken
               </label>
               <input
@@ -359,7 +359,7 @@ const PhotoUpload: React.FC = () => {
                 onChange={handleChange}
                 autoComplete="off"
                 max={new Date().toISOString().slice(0, 10)}
-                className={`${fieldClasses} border-slate-300`}
+                className={`${fieldClasses} border-sand-300`}
               />
             </div>
 
