@@ -11,14 +11,22 @@ import {
 } from '../services/searchService.ts';
 
 interface PhotoSearchProps {
-  /** Optional map/modal hand-off for a result selected by the parent. */
-  onPhotoSelect?: (photo: SearchPhoto) => void;
+  /**
+   * Optional map/modal hand-off for a result selected by the parent. The
+   * clicked element is passed through so the parent can return focus to it
+   * when its modal closes, the same way the Recent Photos grid does.
+   */
+  onPhotoSelect?: (photo: SearchPhoto, opener: HTMLElement | null) => void;
   placeholder?: string;
 }
 
 const PhotoSearch: React.FC<PhotoSearchProps> = ({
   onPhotoSelect,
-  placeholder = 'Try “sunset beaches in Portugal” or “mountain photos from 2023”',
+  // Examples are deliberately drawn from what the corpus can actually answer.
+  // Mood-and-activity prompts ("sunset beaches") return nothing until photos
+  // carry descriptions to match against, since tsv is built from title,
+  // country, and description -- never from the image itself.
+  placeholder = 'Try "espania" or "inca"',
 }) => {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<PhotoSearchResult | null>(null);
@@ -69,7 +77,7 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
         <div className="flex items-center gap-2">
           <Search className="h-5 w-5 text-indigo-600" aria-hidden="true" />
           <h2 id="photo-search-heading" className="text-xl font-bold text-slate-900">
-            Search your map
+            Search public photos
           </h2>
         </div>
         <p className="mt-1 text-sm text-slate-500">
@@ -196,7 +204,7 @@ const PhotoSearch: React.FC<PhotoSearchProps> = ({
                   <Card className="overflow-hidden transition-shadow hover:shadow-lg">
                     <button
                       type="button"
-                      onClick={() => onPhotoSelect(photo)}
+                      onClick={(event) => onPhotoSelect(photo, event.currentTarget)}
                       aria-label={`Open ${photo.title || 'this photo'}`}
                       className={`block w-full text-left ${focusRing}`}
                     >

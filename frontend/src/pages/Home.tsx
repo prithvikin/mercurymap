@@ -8,6 +8,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import MapSearch from '../components/MapSearch.tsx';
 import RecommendationsPanel from '../components/RecommendationsPanel.tsx';
 import CommunityRecommendationsPanel from '../components/CommunityRecommendationsPanel.tsx';
+import PhotoSearch from '../components/PhotoSearch.tsx';
 import NavBar from '../components/NavBar.tsx';
 import PhotoImage from '../components/PhotoImage.tsx';
 import Card from '../components/ui/Card.tsx';
@@ -213,6 +214,21 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
     openModal(0, opener);
   };
 
+  // A search hit can be anywhere in the world, so recentre the map as well as
+  // opening the photo -- otherwise closing the modal leaves the visitor looking
+  // at a viewport that never moved. Coordinates are nullable, so a photo
+  // without them still opens; it just doesn't move the map.
+  const handleSearchPhotoSelect = (photo: Photo, opener: HTMLElement | null) => {
+    if (photo.latitude != null && photo.longitude != null) {
+      handleLocationSearch({
+        lat: photo.latitude,
+        lng: photo.longitude,
+        name: photo.title || photo.country,
+      });
+    }
+    handleRecentPhotoClick(photo, opener);
+  };
+
   const heading = showPublicMap || !user ? 'Public MercuryMap' : 'Your Private MercuryMap';
   const blurb =
     showPublicMap || !user
@@ -403,6 +419,14 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
 
             {showPublicMap && (
               <CommunityRecommendationsPanel onSelectPlace={handleLocationSearch} />
+            )}
+
+            {/* Public-only: search_public_photos hardcodes `user_id IS NULL`,
+                so this can never search the signed-in user's private map. */}
+            {showPublicMap && (
+              <Card className="p-6">
+                <PhotoSearch onPhotoSelect={handleSearchPhotoSelect} />
+              </Card>
             )}
 
             {photos.length > 0 && (
