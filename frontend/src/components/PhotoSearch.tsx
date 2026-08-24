@@ -22,7 +22,11 @@ interface PhotoSearchProps {
 
 const PhotoSearch: React.FC<PhotoSearchProps> = ({
   onPhotoSelect,
-  placeholder = 'Try “sunset beaches in Portugal” or “mountain photos from 2023”',
+  // Examples are deliberately drawn from what the corpus can actually answer.
+  // Mood-and-activity prompts ("sunset beaches") return nothing until photos
+  // carry descriptions to match against, since tsv is built from title,
+  // country, and description -- never from the image itself.
+  placeholder = 'Try “Spain” or “Inca”',
 }) => {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<PhotoSearchResult | null>(null);
