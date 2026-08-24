@@ -14,7 +14,7 @@ import { button } from '../components/ui/buttonStyles.ts';
 const LandingMapPreview = React.lazy(() => import('../components/LandingMapPreview.tsx'));
 
 const mapPreviewSkeletonClasses =
-  'h-72 sm:h-96 rounded-3xl border border-slate-200 shadow-card animate-pulse bg-gradient-to-br from-slate-100 to-slate-200';
+  'h-80 sm:h-[28rem] lg:h-[34rem] rounded-3xl border border-slate-200 shadow-card animate-pulse bg-gradient-to-br from-slate-100 to-slate-200';
 
 const Landing: React.FC = () => {
   const { user } = useAuth();
@@ -26,7 +26,7 @@ const Landing: React.FC = () => {
       <main id="main-content">
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-indigo-50/60 to-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 text-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 text-center">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-5 text-balance">
               Your Travel Memories,<span className="text-indigo-600"> Mapped</span>
             </h1>
