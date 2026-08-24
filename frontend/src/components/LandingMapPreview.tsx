@@ -24,7 +24,9 @@ interface Location {
 // several photos in the same city would otherwise fly the camera to nearly
 // identical points back to back, which reads as a stutter, not a pan.
 function uniqueLocations(photos: Photo[]): Location[] {
-  const seen = new Map<string, Location>();
+  // globalThis.Map, not Map -- the default import above shadows the native
+  // collection with the react-map-gl component of the same name.
+  const seen = new globalThis.Map<string, Location>();
   for (const photo of photos) {
     if (photo.latitude == null || photo.longitude == null) continue;
     const key = `${photo.latitude.toFixed(2)}_${photo.longitude.toFixed(2)}`;
