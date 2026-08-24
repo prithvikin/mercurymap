@@ -50,11 +50,12 @@ function isSinglePlace(place, country) {
   if (/\band\b/i.test(trimmed)) return false;
   if (trimmed.includes(',')) return false;
   if (typeof country === 'string' && country.trim().length > 0) {
-    // A city-state legitimately repeats its country as the place (Singapore,
-    // Monaco, Vatican City). Only reject the country appearing ALONGSIDE other
-    // text, which is the "Stone Town, Zanzibar, Tanzania" shape.
+    // Only a TRAILING country is the "Stone Town, Zanzibar, Tanzania" shape.
+    // Matching the country anywhere rejected "Mexico City"/Mexico on the second
+    // live run, along with Panama City, Guatemala City, and Kuwait City. A
+    // city-state repeating its country (Singapore, Monaco) is fine too.
     const sameName = trimmed.toLowerCase() === country.trim().toLowerCase();
-    if (!sameName && new RegExp(`\\b${escapeRegExp(country.trim())}\\b`, 'i').test(trimmed)) {
+    if (!sameName && new RegExp(`\\b${escapeRegExp(country.trim())}$`, 'i').test(trimmed)) {
       return false;
     }
   }

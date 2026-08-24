@@ -24,6 +24,10 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_PATH = path.join(HERE, 'results', 'geocode-cache.json');
 const ENDPOINT = 'https://api.opencagedata.com/geocode/v1/json';
+// Bump when resolution logic changes. Entries written by older logic are
+// discarded rather than trusted -- a cache full of country centroids from a
+// previous run would silently mask the fix that stopped accepting them.
+const CACHE_VERSION = 2;
 
 export function geocoderApiKey() {
   return process.env.OPENCAGE_API_KEY ?? process.env.REACT_APP_OPENCAGE_API_KEY ?? null;
@@ -35,15 +39,17 @@ export function referenceKey(place, country) {
 
 function readCache() {
   try {
-    return JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'));
+    const stored = JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'));
+    if (stored?.version !== CACHE_VERSION) return {};
+    return stored.entries ?? {};
   } catch {
     return {};
   }
 }
 
-function writeCache(cache) {
+function writeCache(entries) {
   fs.mkdirSync(path.dirname(CACHE_PATH), { recursive: true });
-  fs.writeFileSync(CACHE_PATH, `${JSON.stringify(cache, null, 2)}\n`);
+  fs.writeFileSync(CACHE_PATH, `${JSON.stringify({ version: CACHE_VERSION, entries }, null, 2)}\n`);
 }
 
 /**
@@ -53,27 +59,74 @@ function writeCache(cache) {
  * upstream: a place no geocoder knows is exactly the hallucination the
  * coordinate check is meant to catch, and the app could not pin it either.
  */
-async function geocodeOne(apiKey, place, country) {
-  const query = country ? `${place}, ${country}` : String(place);
-  const url = `${ENDPOINT}?q=${encodeURIComponent(query)}&limit=1&no_annotations=1&key=${apiKey}`;
+/**
+ * OpenCage answers an unmatched query with a low-confidence COUNTRY centroid
+ * rather than an empty result: "Torres del Paine National Park, Chile" came
+ * back as (-30, -71), the middle of Chile, and "Hermanus and the Cape Whale
+ * Coast, South Africa" as (-29, 24). Accepting those as references failed two
+ * correct answers on the second live run.
+ *
+ * `confidence` alone cannot separate them -- Singapore scores 1 because a
+ * city-state has a huge bounding box, and it is perfectly correct. The
+ * reliable signal is the result collapsing to the country itself.
+ */
+function isCountryFallback(result, place, country) {
+  const sameName = String(place ?? '').trim().toLowerCase() === String(country ?? '').trim().toLowerCase();
+  if (sameName) return false; // Singapore, Monaco: the country IS the place.
+  if (result.components?._type === 'country') return true;
+  return String(result.formatted ?? '').trim().toLowerCase() === String(country ?? '').trim().toLowerCase();
+}
 
+// "Torres del Paine National Park" does not match, but "Torres del Paine"
+// resolves exactly. Dropping a trailing generic designator is enough to
+// recover the legitimate non-city destinations the endpoints suggest.
+const GENERIC_SUFFIX = /\s+(national\s+park|nature\s+reserve|national\s+monument|national\s+forest|park)$/i;
+
+async function fetchOne(apiKey, query) {
+  const url = `${ENDPOINT}?q=${encodeURIComponent(query)}&limit=1&no_annotations=1&key=${apiKey}`;
   const response = await fetch(url);
   if (!response.ok) {
     // A rejected key returns a normal response body, so this must not be
     // confused with "no match" -- that would silently pass everything.
     throw new Error(`OpenCage returned ${response.status} ${response.statusText} for "${query}"`);
   }
-
   const body = await response.json();
-  const first = body?.results?.[0];
-  if (!first?.geometry) return null;
+  return body?.results?.[0] ?? null;
+}
 
-  return {
-    latitude: first.geometry.lat,
-    longitude: first.geometry.lng,
-    formatted: first.formatted ?? query,
-    source: 'opencage',
-  };
+/**
+ * Resolve one place to a reference coordinate.
+ *
+ * Returns null for anything that cannot be resolved to something more specific
+ * than its country. That stays a failure upstream: a place no geocoder can
+ * place is exactly the hallucination this check exists to catch, and the app
+ * could not pin it either.
+ */
+async function geocodeOne(apiKey, place, country) {
+  const base = String(place ?? '').trim();
+  const queries = [country ? `${base}, ${country}` : base];
+
+  const simplified = base.replace(GENERIC_SUFFIX, '').trim();
+  if (simplified && simplified !== base) {
+    queries.push(country ? `${simplified}, ${country}` : simplified);
+  }
+
+  for (const query of queries) {
+    const first = await fetchOne(apiKey, query);
+    if (!first?.geometry) continue;
+    if (isCountryFallback(first, place, country)) continue;
+    return {
+      latitude: first.geometry.lat,
+      longitude: first.geometry.lng,
+      formatted: first.formatted ?? query,
+      confidence: first.confidence ?? null,
+      type: first.components?._type ?? null,
+      query,
+      source: 'opencage',
+    };
+  }
+
+  return null;
 }
 
 /**
