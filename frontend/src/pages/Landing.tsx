@@ -26,7 +26,7 @@ const Landing: React.FC = () => {
       <main id="main-content">
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-indigo-50/60 to-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-14 text-center">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 text-center">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-5 text-balance">
               Your Travel Memories,<span className="text-indigo-600"> Mapped</span>
             </h1>
@@ -63,7 +63,7 @@ const Landing: React.FC = () => {
         </section>
 
         {/* AI Community Recommendations Teaser */}
-        <section className="py-16 bg-white">
+        <section className="pt-8 pb-16 bg-white">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <CommunityRecommendationsPanel compact />
           </div>
