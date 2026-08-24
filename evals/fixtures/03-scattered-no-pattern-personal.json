@@ -1,0 +1,26 @@
+{
+  "intro": "Your history is wonderfully scattered rather than tied to one obvious theme, spanning Tokyo, Reykjavik, Marrakech, and Lima.",
+  "suggestions": [
+    {
+      "place": "Istanbul",
+      "country": "Turkey",
+      "latitude": 41.0082,
+      "longitude": 28.9784,
+      "reason": "Istanbul offers another layered, broadly appealing city experience to complement your very different stops."
+    },
+    {
+      "place": "New York",
+      "country": "United States",
+      "latitude": 40.7128,
+      "longitude": -74.006,
+      "reason": "New York keeps the open-ended city-hopping spirit of a history that ranges from Tokyo to Lima."
+    },
+    {
+      "place": "Cape Town",
+      "country": "South Africa",
+      "latitude": -33.9249,
+      "longitude": 18.4241,
+      "reason": "Cape Town combines city, landscape, and food in a way that suits your varied travel record."
+    }
+  ]
+}

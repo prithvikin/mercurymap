@@ -1,0 +1,21 @@
+{
+  "intro_pattern_score": 2,
+  "reason_grounding_score": 2,
+  "tone_score": 2,
+  "overall_score": 6,
+  "explanation": "The response identifies the expected travel signal, ties each destination to concrete history, and stays warm and conversational.",
+  "reason_checks": [
+    {
+      "score": 2,
+      "note": "Each reason cites a concrete place or trait from the input history."
+    },
+    {
+      "score": 2,
+      "note": "Each reason cites a concrete place or trait from the input history."
+    },
+    {
+      "score": 2,
+      "note": "Each reason cites a concrete place or trait from the input history."
+    }
+  ]
+}

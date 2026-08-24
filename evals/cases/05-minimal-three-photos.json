@@ -1,0 +1,39 @@
+{
+  "id": "05-minimal-three-photos",
+  "title": "Exactly three photos still meet the recommendation threshold",
+  "endpoint": "personal",
+  "history": [
+    {
+      "title": "Lisbon",
+      "country": "Portugal",
+      "latitude": 38.7223,
+      "longitude": -9.1393,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Porto",
+      "country": "Portugal",
+      "latitude": 41.1579,
+      "longitude": -8.6291,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Barcelona",
+      "country": "Spain",
+      "latitude": 41.3874,
+      "longitude": 2.1686,
+      "taken_date": "2025-01-01"
+    }
+  ],
+  "expected": {
+    "kind": "recommendations",
+    "pattern": "Iberian/coastal city travel",
+    "mustMention": [
+      "Portugal",
+      "Spain",
+      "coast",
+      "city"
+    ],
+    "fixture": "05-minimal-three-photos.json"
+  }
+}

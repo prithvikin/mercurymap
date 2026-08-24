@@ -1,0 +1,26 @@
+{
+  "intro": "Travelers here have covered a broad range rather than converging on one theme, from New York and Tokyo to Cairo and Cape Town.",
+  "suggestions": [
+    {
+      "place": "Istanbul",
+      "country": "Turkey",
+      "latitude": 41.0082,
+      "longitude": 28.9784,
+      "reason": "Istanbul is a flexible city recommendation that bridges the community's mix of history, food, and geography."
+    },
+    {
+      "place": "Lisbon",
+      "country": "Portugal",
+      "latitude": 38.7223,
+      "longitude": -9.1393,
+      "reason": "Lisbon offers an approachable next stop for a community whose photos span several continents."
+    },
+    {
+      "place": "Singapore",
+      "country": "Singapore",
+      "latitude": 1.3521,
+      "longitude": 103.8198,
+      "reason": "Singapore adds another distinct, easy-to-explore city to this community's wide-ranging travel map."
+    }
+  ]
+}

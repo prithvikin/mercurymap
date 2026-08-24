@@ -1,0 +1,46 @@
+{
+  "id": "10-scattered-community",
+  "title": "Community history is geographically broad",
+  "endpoint": "community",
+  "history": [
+    {
+      "title": "New York",
+      "country": "United States",
+      "latitude": 40.7128,
+      "longitude": -74.006,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Cairo",
+      "country": "Egypt",
+      "latitude": 30.0444,
+      "longitude": 31.2357,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Tokyo",
+      "country": "Japan",
+      "latitude": 35.6762,
+      "longitude": 139.6503,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Cape Town",
+      "country": "South Africa",
+      "latitude": -33.9249,
+      "longitude": 18.4241,
+      "taken_date": "2025-01-01"
+    }
+  ],
+  "expected": {
+    "kind": "recommendations",
+    "pattern": "broad, varied community travel",
+    "mustMention": [
+      "varied",
+      "wide range",
+      "different",
+      "scattered"
+    ],
+    "fixture": "10-scattered-community.json"
+  }
+}

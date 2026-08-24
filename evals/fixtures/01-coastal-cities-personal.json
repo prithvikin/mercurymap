@@ -1,0 +1,26 @@
+{
+  "intro": "You keep gravitating toward coastal cities, from Lisbon and Barcelona to Sydney and Cape Town\u2014so a trip with salt air and a strong waterfront seems right up your alley.",
+  "suggestions": [
+    {
+      "place": "Porto",
+      "country": "Portugal",
+      "latitude": 41.1579,
+      "longitude": -8.6291,
+      "reason": "Its Atlantic setting and walkable riverfront continue the coastal-city thread in your Lisbon photos."
+    },
+    {
+      "place": "Valencia",
+      "country": "Spain",
+      "latitude": 39.4699,
+      "longitude": -0.3763,
+      "reason": "Valencia pairs Mediterranean beaches with the urban energy that links your Barcelona and Sydney stops."
+    },
+    {
+      "place": "Cartagena",
+      "country": "Colombia",
+      "latitude": 10.391,
+      "longitude": -75.4794,
+      "reason": "Its historic waterfront and Caribbean light offer another warm coastal city in the spirit of Cape Town and Lisbon."
+    }
+  ]
+}

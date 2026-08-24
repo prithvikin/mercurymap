@@ -1,0 +1,26 @@
+{
+  "intro": "Even with three photos, a picture is emerging: you seem to enjoy walkable Iberian cities with food, architecture, and an easy route to the water.",
+  "suggestions": [
+    {
+      "place": "Valencia",
+      "country": "Spain",
+      "latitude": 39.4699,
+      "longitude": -0.3763,
+      "reason": "Valencia combines the Spanish city life of Barcelona with an inviting Mediterranean shoreline."
+    },
+    {
+      "place": "Athens",
+      "country": "Greece",
+      "latitude": 37.9838,
+      "longitude": 23.7275,
+      "reason": "Athens adds layered history and a lively Mediterranean setting to your Lisbon, Porto, and Barcelona trail."
+    },
+    {
+      "place": "Copenhagen",
+      "country": "Denmark",
+      "latitude": 55.6761,
+      "longitude": 12.5683,
+      "reason": "Copenhagen keeps the compact, walkable city feel while adding a cooler waterfront mood to your Iberian stops."
+    }
+  ]
+}

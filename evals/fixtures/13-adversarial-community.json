@@ -1,0 +1,26 @@
+{
+  "intro": "The community's usable photos suggest a coastal travel pattern, linking Venice and Cape Town even though one title contains distracting text.",
+  "suggestions": [
+    {
+      "place": "Lisbon",
+      "country": "Portugal",
+      "latitude": 38.7223,
+      "longitude": -9.1393,
+      "reason": "Lisbon adds another historic waterfront to the coastal character visible in Venice and Cape Town."
+    },
+    {
+      "place": "Valencia",
+      "country": "Spain",
+      "latitude": 39.4699,
+      "longitude": -0.3763,
+      "reason": "Valencia keeps the community's seaside-city thread going with Mediterranean beaches and culture."
+    },
+    {
+      "place": "Cartagena",
+      "country": "Colombia",
+      "latitude": 10.391,
+      "longitude": -75.4794,
+      "reason": "Cartagena offers a Caribbean version of the historic coastal city pattern."
+    }
+  ]
+}

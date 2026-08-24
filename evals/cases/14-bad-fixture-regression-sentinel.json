@@ -1,0 +1,33 @@
+{
+  "id": "14-bad-fixture-regression-sentinel",
+  "title": "Known-bad response proves validators fail closed",
+  "endpoint": "personal",
+  "history": [
+    {
+      "title": "Lisbon",
+      "country": "Portugal",
+      "latitude": 38.7223,
+      "longitude": -9.1393,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Barcelona",
+      "country": "Spain",
+      "latitude": 41.3874,
+      "longitude": 2.1686,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Sydney",
+      "country": "Australia",
+      "latitude": -33.8688,
+      "longitude": 151.2093,
+      "taken_date": "2025-01-01"
+    }
+  ],
+  "expected": {
+    "kind": "recommendations",
+    "expectFailure": true,
+    "fixture": "14-bad-fixture-regression-sentinel.json"
+  }
+}

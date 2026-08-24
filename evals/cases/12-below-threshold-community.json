@@ -1,0 +1,25 @@
+{
+  "id": "12-below-threshold-community",
+  "title": "Two public photos should return needsMoreData",
+  "endpoint": "community",
+  "history": [
+    {
+      "title": "Tokyo",
+      "country": "Japan",
+      "latitude": 35.6762,
+      "longitude": 139.6503,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Kyoto",
+      "country": "Japan",
+      "latitude": 35.0116,
+      "longitude": 135.7681,
+      "taken_date": "2025-01-01"
+    }
+  ],
+  "expected": {
+    "kind": "needs-more",
+    "fixture": "12-below-threshold-community.json"
+  }
+}

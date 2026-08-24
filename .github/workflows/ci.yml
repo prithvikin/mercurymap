@@ -34,3 +34,10 @@ jobs:
 
       - name: Build production bundle
         run: CI=true npx react-scripts build
+
+      # Offline by default: fixture-backed, no API key, no network, no spend.
+      # Also fails if a checked-in eval prompt drifts from the SYSTEM_PROMPT
+      # actually shipped in the recommendation endpoints.
+      - name: LLM evaluations
+        working-directory: .
+        run: node evals/run.mjs

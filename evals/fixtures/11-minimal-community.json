@@ -1,0 +1,26 @@
+{
+  "intro": "MercuryMap's small sample is already Japan-focused, with Tokyo, Kyoto, and Osaka showing a strong interest in Japanese cities and culture.",
+  "suggestions": [
+    {
+      "place": "Sapporo",
+      "country": "Japan",
+      "latitude": 43.0618,
+      "longitude": 141.3545,
+      "reason": "Sapporo broadens the community's Japan map with a cooler northern city and different food culture."
+    },
+    {
+      "place": "Nara",
+      "country": "Japan",
+      "latitude": 34.6851,
+      "longitude": 135.8048,
+      "reason": "Nara offers another heritage-rich Japanese stop that builds on the community's Kyoto photos."
+    },
+    {
+      "place": "Seoul",
+      "country": "South Korea",
+      "latitude": 37.5665,
+      "longitude": 126.978,
+      "reason": "Seoul is a nearby cultural counterpoint to the dense, modern Asian cities already photographed."
+    }
+  ]
+}

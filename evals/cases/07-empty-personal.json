@@ -1,0 +1,10 @@
+{
+  "id": "07-empty-personal",
+  "title": "Empty personal history should return the early exit",
+  "endpoint": "personal",
+  "history": [],
+  "expected": {
+    "kind": "needs-more",
+    "fixture": "07-empty-personal.json"
+  }
+}

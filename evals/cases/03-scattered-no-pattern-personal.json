@@ -1,0 +1,47 @@
+{
+  "id": "03-scattered-no-pattern-personal",
+  "title": "Personal history with no honest unifying pattern",
+  "endpoint": "personal",
+  "history": [
+    {
+      "title": "Tokyo",
+      "country": "Japan",
+      "latitude": 35.6762,
+      "longitude": 139.6503,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Reykjavik",
+      "country": "Iceland",
+      "latitude": 64.1466,
+      "longitude": -21.9426,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Marrakech",
+      "country": "Morocco",
+      "latitude": 31.6295,
+      "longitude": -7.9811,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Lima",
+      "country": "Peru",
+      "latitude": -12.0464,
+      "longitude": -77.0428,
+      "taken_date": "2025-01-01"
+    }
+  ],
+  "expected": {
+    "kind": "recommendations",
+    "pattern": "scattered travel with no clear pattern",
+    "mustMention": [
+      "scattered",
+      "varied",
+      "different",
+      "no clear pattern",
+      "wide range"
+    ],
+    "fixture": "03-scattered-no-pattern-personal.json"
+  }
+}

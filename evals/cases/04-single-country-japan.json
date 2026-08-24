@@ -1,0 +1,44 @@
+{
+  "id": "04-single-country-japan",
+  "title": "Personal history concentrated in one country",
+  "endpoint": "personal",
+  "history": [
+    {
+      "title": "Tokyo",
+      "country": "Japan",
+      "latitude": 35.6762,
+      "longitude": 139.6503,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Kyoto",
+      "country": "Japan",
+      "latitude": 35.0116,
+      "longitude": 135.7681,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Osaka",
+      "country": "Japan",
+      "latitude": 34.6937,
+      "longitude": 135.5023,
+      "taken_date": "2025-01-01"
+    },
+    {
+      "title": "Nara",
+      "country": "Japan",
+      "latitude": 34.6851,
+      "longitude": 135.8048,
+      "taken_date": "2025-01-01"
+    }
+  ],
+  "expected": {
+    "kind": "recommendations",
+    "pattern": "Japan-focused history",
+    "mustMention": [
+      "Japan",
+      "Japanese"
+    ],
+    "fixture": "04-single-country-japan.json"
+  }
+}

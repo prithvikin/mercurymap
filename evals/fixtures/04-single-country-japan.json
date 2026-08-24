@@ -1,0 +1,26 @@
+{
+  "intro": "Japan is clearly a favourite in your map, with Tokyo, Kyoto, Osaka, and Nara pointing to a sustained interest in Japanese city life and heritage.",
+  "suggestions": [
+    {
+      "place": "Sapporo",
+      "country": "Japan",
+      "latitude": 43.0618,
+      "longitude": 141.3545,
+      "reason": "Sapporo gives your Japan-focused travels a northern contrast to the cities and temples already in your history."
+    },
+    {
+      "place": "Singapore",
+      "country": "Singapore",
+      "latitude": 1.3521,
+      "longitude": 103.8198,
+      "reason": "Singapore offers another polished, food-forward Asian city after the urban energy you found across Japan."
+    },
+    {
+      "place": "Seoul",
+      "country": "South Korea",
+      "latitude": 37.5665,
+      "longitude": 126.978,
+      "reason": "Seoul is a natural next step for your interest in dense Asian cities, contemporary culture, and deep history."
+    }
+  ]
+}
