@@ -27,7 +27,7 @@ const Landing: React.FC = () => {
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-clay-50/60 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8 text-center">
-            <h1 className="font-display text-4xl md:text-6xl font-extrabold tracking-tight text-sand-900 mb-4 text-balance">
+            <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-sand-900 mb-4 text-balance">
               Your Travel Memories,<span className="text-clay-600"> Mapped</span>
             </h1>
             <p className="text-lg md:text-xl text-sand-600 mb-6 max-w-2xl mx-auto text-pretty">
