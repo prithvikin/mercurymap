@@ -93,6 +93,14 @@ const PhotoPopupCard: React.FC<{ photo: Photo }> = ({ photo }) => {
 const LandingMapPreview: React.FC = () => {
   const [locations, setLocations] = useState<Location[] | null>(null);
   const [activeLocation, setActiveLocation] = useState<Location | null>(null);
+  // The <Map> only mounts once `locations` resolves, so the pan effect below
+  // would otherwise fire on the very same commit that creates the map -- with
+  // the Mapbox instance either still null or not yet through its `load`
+  // event. `mapRef.current?.flyTo(...)` swallows that silently, so the opening
+  // flight went nowhere and the first visible movement was the interval's
+  // first tick a full PAN_INTERVAL_MS later. Waiting for `load` is what makes
+  // "start immediately" actually mean immediately.
+  const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef<any>(null);
   const panIndexRef = useRef(0);
 
@@ -118,7 +126,7 @@ const LandingMapPreview: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!locations || locations.length === 0) return;
+    if (!locations || locations.length === 0 || !mapReady) return;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -151,7 +159,7 @@ const LandingMapPreview: React.FC = () => {
       window.clearInterval(interval);
       window.clearTimeout(revealTimeout);
     };
-  }, [locations]);
+  }, [locations, mapReady]);
 
   const isLoading = locations === null;
   const hasLocations = locations !== null && locations.length > 0;
@@ -169,6 +177,7 @@ const LandingMapPreview: React.FC = () => {
         <div aria-hidden="true" className="h-full w-full">
           <Map
             ref={mapRef}
+            onLoad={() => setMapReady(true)}
             initialViewState={INITIAL_VIEW_STATE}
             style={{ width: '100%', height: '100%' }}
             mapStyle="mapbox://styles/mapbox/outdoors-v12"
