@@ -1,4 +1,5 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
+const plugin = require('tailwindcss/plugin');
 
 /**
  * MercuryMap's design tokens.
@@ -110,16 +111,32 @@ module.exports = {
         lift: '0 2px 4px -1px rgb(36 30 24 / 0.06), 0 8px 16px -4px rgb(36 30 24 / 0.10)',
         float: '0 4px 8px -2px rgb(36 30 24 / 0.08), 0 16px 32px -8px rgb(36 30 24 / 0.14)',
       },
-
-      backgroundImage: {
-        // Very low-amplitude fractal noise, inlined as SVG so it costs no
-        // request. Gives large cream areas a faint paper tooth instead of a
-        // flat digital fill. Tiled at 160px; opacity is doing almost all the
-        // work here on purpose -- it should read as texture, not as dirt.
-        grain:
-          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E\")",
-      },
     },
   },
-  plugins: [],
+  plugins: [
+    // `bg-grain` -- a faint paper tooth for large flat fills, as inline SVG
+    // fractal noise so it costs no request. Tiled at 160px.
+    //
+    // Shipped as a plugin rather than a `backgroundImage` token because the
+    // blend mode is not optional: painted normally, the noise only ever
+    // lightens what is under it, which quietly erodes contrast. Measured on
+    // the clay-700 CTA, plain noise strong enough to see (opacity 0.40) drags
+    // the clay-100 paragraph from 5.74:1 down to 4.47:1 -- under AA. Overlay
+    // modulates in both directions instead, so the same visible texture
+    // (sd ~3.9/255) costs only 5.74 -> 5.26:1. Binding the two together here
+    // means `bg-grain` cannot be used without the blend that makes it safe.
+    //
+    // The original 0.035 measured sd 1.1/255 on screen: rendering, but about
+    // 0.4% modulation, i.e. invisible. 0.5 lands near sd 5.5 and ~5.05:1.
+    // Much past this it stops reading as texture and starts reading as dirt.
+    plugin(({ addUtilities }) => {
+      addUtilities({
+        '.bg-grain': {
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")",
+          backgroundBlendMode: 'overlay',
+        },
+      });
+    }),
+  ],
 };

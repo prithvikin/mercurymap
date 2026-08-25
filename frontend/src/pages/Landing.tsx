@@ -26,11 +26,11 @@ const Landing: React.FC = () => {
       <main id="main-content">
         {/* Hero Section */}
         <section className="bg-gradient-to-b from-clay-50/60 to-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 text-center">
-            <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-sand-900 mb-5 text-balance">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-8 text-center">
+            <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight text-sand-900 mb-4 text-balance">
               Your Travel Memories,<span className="text-clay-600"> Mapped</span>
             </h1>
-            <p className="text-lg md:text-xl text-sand-600 mb-10 max-w-2xl mx-auto text-pretty">
+            <p className="text-lg md:text-xl text-sand-600 mb-6 max-w-2xl mx-auto text-pretty">
               Your photos belong on a map, not lost in a camera roll. See every trip you've taken
               and exactly where each memory happened.
             </p>
