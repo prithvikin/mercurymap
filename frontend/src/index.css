@@ -17,11 +17,18 @@ body {
 }
 
 /* Fraunces is a display face with real personality, which is exactly what
-   makes it wrong at UI sizes -- so it is opt-in via `font-display`, and the
-   optical-size axis is pinned high so headings get the display cut rather
-   than the text cut. */
+   makes it wrong at UI sizes -- so it is opt-in via `font-display`.
+
+   The optical-size axis is deliberately NOT pinned. It used to sit at 120,
+   the display cut, which maximises stroke contrast: gorgeous in the
+   abstract, but it renders the thin strokes as hairlines that look broken
+   at the wordmark's 18px and weedy even in the 60px hero. Left alone, the
+   browser drives `opsz` from the actual font-size, so the small wordmark
+   gets the sturdy text cut and the hero gets a moderate one. `SOFT` keeps
+   the rounded, slightly wonky serifs that carry the travel-poster voice. */
 .font-display {
-  font-variation-settings: 'opsz' 120, 'SOFT' 30;
+  font-optical-sizing: auto;
+  font-variation-settings: 'SOFT' 30;
   letter-spacing: -0.015em;
 }
 

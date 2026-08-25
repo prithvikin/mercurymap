@@ -31,7 +31,7 @@ const NavBar: React.FC = () => {
               className={`flex items-center space-x-2 rounded-lg hover:opacity-80 transition-opacity ${focusRing}`}
             >
               <Camera className="h-7 w-7 text-clay-600" aria-hidden="true" />
-              <span className="font-display text-lg font-bold text-sand-900" translate="no">
+              <span className="font-display text-lg font-extrabold text-sand-900" translate="no">
                 MercuryMap
               </span>
             </Link>

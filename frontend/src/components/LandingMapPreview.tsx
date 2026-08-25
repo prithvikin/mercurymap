@@ -13,10 +13,16 @@ import { button } from './ui/buttonStyles.ts';
 
 const PAN_INTERVAL_MS = 4500;
 const FLY_DURATION_MS = 1800;
+// The first flight is deliberately quicker than the rest. Every later pan is
+// something the visitor is already watching, so it can take its time; the
+// opening one is dead air on a page that has otherwise finished painting, and
+// 1800ms of it plus the reveal delay meant nearly two seconds of an empty
+// world map before anything moved.
+const FIRST_FLY_DURATION_MS = 700;
 // Reveal the photo card once the camera has essentially arrived, not while
 // it's still mid-flight -- this is what makes it read as "the pin was
 // clicked" rather than "a card is dragging across the map."
-const PHOTO_REVEAL_DELAY_MS = FLY_DURATION_MS + 100;
+const PHOTO_REVEAL_GAP_MS = 100;
 const MAX_LOCATIONS = 8;
 const INITIAL_VIEW_STATE = { longitude: 0, latitude: 20, zoom: 1.25 };
 // Matches PhotoPopupCard's own w-40 (10rem). index.css used to carry a
@@ -125,19 +131,22 @@ const LandingMapPreview: React.FC = () => {
 
     let revealTimeout: number;
 
-    const flyToNext = () => {
+    const flyToNext = (durationMs: number) => {
       const next = locations[panIndexRef.current % locations.length];
       panIndexRef.current += 1;
       // Hide the current card immediately -- it belongs to the pin the
       // camera is leaving, not the one it's flying toward.
       setActiveLocation(null);
-      mapRef.current?.flyTo({ center: [next.longitude, next.latitude], zoom: 3.4, duration: FLY_DURATION_MS });
+      mapRef.current?.flyTo({ center: [next.longitude, next.latitude], zoom: 3.4, duration: durationMs });
       window.clearTimeout(revealTimeout);
-      revealTimeout = window.setTimeout(() => setActiveLocation(next), PHOTO_REVEAL_DELAY_MS);
+      // Reveal tracks whichever flight this was, so the card still lands as
+      // the camera arrives rather than at a fixed offset that only matched
+      // the slow pan.
+      revealTimeout = window.setTimeout(() => setActiveLocation(next), durationMs + PHOTO_REVEAL_GAP_MS);
     };
 
-    flyToNext();
-    const interval = window.setInterval(flyToNext, PAN_INTERVAL_MS);
+    flyToNext(FIRST_FLY_DURATION_MS);
+    const interval = window.setInterval(() => flyToNext(FLY_DURATION_MS), PAN_INTERVAL_MS);
     return () => {
       window.clearInterval(interval);
       window.clearTimeout(revealTimeout);

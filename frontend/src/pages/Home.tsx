@@ -57,10 +57,16 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   };
 
   // Initial map state for reset functionality
+  // Both the private and the public map open here. 1.25 left the globe a
+  // small disc in a large black frame -- 216px of empty margin above and
+  // below it -- so the pins read as specks. 1.8 sizes the globe to just
+  // inside the frame (~36px margin at desktop), which is as close as this
+  // can go before the poles start getting cropped and whole longitudes drop
+  // out of view. Every continent still visible, but the earth fills the box.
   const initialViewState = {
     longitude: 0,
     latitude: 20,
-    zoom: 1.25
+    zoom: 1.8
   };
 
   // Mapbox viewport state
