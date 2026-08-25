@@ -53,12 +53,12 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2
             id="recommendations-heading"
-            className="text-xl font-bold text-slate-900 flex items-center"
+            className="font-display text-xl font-bold text-sand-900 flex items-center"
           >
-            <Sparkles className="h-5 w-5 mr-2 text-indigo-600" aria-hidden="true" />
+            <Sparkles className="h-5 w-5 mr-2 text-sea-600" aria-hidden="true" />
             Where to Next?
           </h2>
-          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
+          <span className="inline-flex items-center rounded-full bg-sea-50 px-2.5 py-0.5 text-xs font-semibold text-sea-700 ring-1 ring-inset ring-sea-100">
             AI-generated
           </span>
         </div>
@@ -77,7 +77,7 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
       {error && (
         <div
           role="alert"
-          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm"
+          className="bg-berry-50 border border-berry-200 text-berry-700 px-4 py-3 rounded-xl mb-4 text-sm"
         >
           {error}
         </div>
@@ -86,21 +86,21 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
       {isStale && (
         <div
           role="status"
-          className="bg-indigo-50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl mb-4 text-sm"
+          className="bg-sea-50 border border-sea-100 text-sea-800 px-4 py-3 rounded-xl mb-4 text-sm"
         >
           You’ve added photos since this was generated. Refresh for an updated suggestion.
         </div>
       )}
 
       {loading && (
-        <div className="flex items-center justify-center py-12 text-indigo-600">
+        <div className="flex items-center justify-center py-12 text-sea-600">
           <Spinner label="Finding destinations for you…" className="h-12 w-12" />
         </div>
       )}
 
       {!loading && !data && (
         <div className="text-center py-8">
-          <p className="text-slate-600 mb-4 text-pretty">
+          <p className="text-sand-600 mb-4 text-pretty">
             Based on the places you’ve photographed, get suggestions for where to travel next.
           </p>
           <button
@@ -114,8 +114,8 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
 
       {!loading && data?.needsMorePhotos && (
         <div className="text-center py-8">
-          <MapPin className="h-10 w-10 mx-auto text-slate-300 mb-3" aria-hidden="true" />
-          <p className="text-slate-600 text-pretty">
+          <MapPin className="h-10 w-10 mx-auto text-sand-300 mb-3" aria-hidden="true" />
+          <p className="text-sand-600 text-pretty">
             Upload at least {data.required} photos with locations and we can start spotting what
             kind of travel you like.
           </p>
@@ -124,7 +124,7 @@ const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
 
       {!loading && data?.suggestions && (
         <>
-          <p className="text-slate-700 mb-5 text-pretty">{data.intro}</p>
+          <p className="text-sand-700 mb-5 text-pretty">{data.intro}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.suggestions.map((suggestion) => (
               <SuggestionCard

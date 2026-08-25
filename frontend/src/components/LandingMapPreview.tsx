@@ -13,10 +13,16 @@ import { button } from './ui/buttonStyles.ts';
 
 const PAN_INTERVAL_MS = 4500;
 const FLY_DURATION_MS = 1800;
+// The first flight is deliberately quicker than the rest. Every later pan is
+// something the visitor is already watching, so it can take its time; the
+// opening one is dead air on a page that has otherwise finished painting, and
+// 1800ms of it plus the reveal delay meant nearly two seconds of an empty
+// world map before anything moved.
+const FIRST_FLY_DURATION_MS = 700;
 // Reveal the photo card once the camera has essentially arrived, not while
 // it's still mid-flight -- this is what makes it read as "the pin was
 // clicked" rather than "a card is dragging across the map."
-const PHOTO_REVEAL_DELAY_MS = FLY_DURATION_MS + 100;
+const PHOTO_REVEAL_GAP_MS = 100;
 const MAX_LOCATIONS = 8;
 const INITIAL_VIEW_STATE = { longitude: 0, latitude: 20, zoom: 1.25 };
 // Matches PhotoPopupCard's own w-40 (10rem). index.css used to carry a
@@ -66,7 +72,7 @@ const PhotoPopupCard: React.FC<{ photo: Photo }> = ({ photo }) => {
 
   return (
     <div
-      className={`w-40 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5 transition-all duration-300 ease-out ${
+      className={`w-40 overflow-hidden rounded-xl bg-white shadow-float ring-1 ring-sand-900/5 transition-all duration-300 ease-out ${
         visible ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
       }`}
     >
@@ -74,11 +80,11 @@ const PhotoPopupCard: React.FC<{ photo: Photo }> = ({ photo }) => {
         src={photo.file_url}
         alt={photo.title || 'Travel photo'}
         width={200}
-        className="h-24 w-full bg-slate-200 object-cover"
+        className="h-24 w-full bg-sand-200 object-cover"
       />
       <div className="p-2">
-        <p className="truncate text-xs font-semibold text-slate-900">{photo.title || 'Untitled'}</p>
-        <p className="truncate text-[11px] text-slate-500">{photo.country}</p>
+        <p className="truncate text-xs font-semibold text-sand-900">{photo.title || 'Untitled'}</p>
+        <p className="truncate text-[11px] text-sand-500">{photo.country}</p>
       </div>
     </div>
   );
@@ -125,19 +131,22 @@ const LandingMapPreview: React.FC = () => {
 
     let revealTimeout: number;
 
-    const flyToNext = () => {
+    const flyToNext = (durationMs: number) => {
       const next = locations[panIndexRef.current % locations.length];
       panIndexRef.current += 1;
       // Hide the current card immediately -- it belongs to the pin the
       // camera is leaving, not the one it's flying toward.
       setActiveLocation(null);
-      mapRef.current?.flyTo({ center: [next.longitude, next.latitude], zoom: 3.4, duration: FLY_DURATION_MS });
+      mapRef.current?.flyTo({ center: [next.longitude, next.latitude], zoom: 3.4, duration: durationMs });
       window.clearTimeout(revealTimeout);
-      revealTimeout = window.setTimeout(() => setActiveLocation(next), PHOTO_REVEAL_DELAY_MS);
+      // Reveal tracks whichever flight this was, so the card still lands as
+      // the camera arrives rather than at a fixed offset that only matched
+      // the slow pan.
+      revealTimeout = window.setTimeout(() => setActiveLocation(next), durationMs + PHOTO_REVEAL_GAP_MS);
     };
 
-    flyToNext();
-    const interval = window.setInterval(flyToNext, PAN_INTERVAL_MS);
+    flyToNext(FIRST_FLY_DURATION_MS);
+    const interval = window.setInterval(() => flyToNext(FLY_DURATION_MS), PAN_INTERVAL_MS);
     return () => {
       window.clearInterval(interval);
       window.clearTimeout(revealTimeout);
@@ -148,9 +157,9 @@ const LandingMapPreview: React.FC = () => {
   const hasLocations = locations !== null && locations.length > 0;
 
   return (
-    <div className="relative h-96 overflow-hidden rounded-3xl border border-slate-200 shadow-card sm:h-[32rem] lg:h-[38rem]">
+    <div className="relative h-96 overflow-hidden rounded-3xl border border-sand-200 shadow-card sm:h-[32rem] lg:h-[38rem]">
       {isLoading ? (
-        <div className="h-full w-full animate-pulse bg-gradient-to-br from-slate-100 to-slate-200" />
+        <div className="h-full w-full animate-pulse bg-gradient-to-br from-sand-100 to-sand-200" />
       ) : hasLocations ? (
         // Decorative: the map is a preview, not a tool. All the real
         // interaction lives behind the CTA below, which stays outside this
@@ -162,7 +171,7 @@ const LandingMapPreview: React.FC = () => {
             ref={mapRef}
             initialViewState={INITIAL_VIEW_STATE}
             style={{ width: '100%', height: '100%' }}
-            mapStyle="mapbox://styles/mapbox/streets-v11"
+            mapStyle="mapbox://styles/mapbox/outdoors-v12"
             mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
             dragPan={false}
             dragRotate={false}
@@ -175,7 +184,7 @@ const LandingMapPreview: React.FC = () => {
           >
             {locations.map((location) => (
               <Marker key={location.key} longitude={location.longitude} latitude={location.latitude} anchor="bottom">
-                <span className="block h-3.5 w-3.5 rounded-full border-2 border-white bg-indigo-600 shadow-card" />
+                <span className="block h-3.5 w-3.5 rounded-full border-2 border-white bg-clay-600 shadow-card" />
               </Marker>
             ))}
 
@@ -201,7 +210,7 @@ const LandingMapPreview: React.FC = () => {
           </Map>
         </div>
       ) : (
-        <div className="h-full w-full bg-gradient-to-br from-indigo-50 to-white" />
+        <div className="h-full w-full bg-gradient-to-br from-clay-50 to-white" />
       )}
 
       <div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/50 via-black/5 to-transparent p-6 sm:p-8">

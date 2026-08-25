@@ -9,8 +9,8 @@ import Spinner from '../components/ui/Spinner.tsx';
 import { button, focusRing } from '../components/ui/buttonStyles.ts';
 
 const inputClasses =
-  'block w-full px-3 py-2 border rounded-lg placeholder-slate-400 sm:text-sm ' +
-  'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500';
+  'block w-full px-3 py-2 border rounded-lg placeholder-sand-400 sm:text-sm ' +
+  'focus:outline-none focus:ring-2 focus:ring-clay-500 focus:border-clay-500';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -82,25 +82,25 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-sand-50">
       <NavBar />
 
       <main id="main-content" className="flex flex-col justify-center py-16 px-4 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex justify-center">
-            <div className="bg-indigo-100 p-3 rounded-2xl">
-              <Camera className="h-8 w-8 text-indigo-600" aria-hidden="true" />
+            <div className="bg-clay-100 p-3 rounded-2xl">
+              <Camera className="h-8 w-8 text-clay-600" aria-hidden="true" />
             </div>
           </div>
-          <h1 className="mt-6 text-center text-2xl font-bold text-slate-900 text-balance">
+          <h1 className="mt-6 text-center text-2xl font-bold text-sand-900 text-balance">
             {isSignUp ? 'Create Your Account' : 'Sign In to Your Account'}
           </h1>
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-2 text-center text-sm text-sand-500">
             {isSignUp ? 'Already have an account?' : 'Don’t have an account?'}{' '}
             <button
               type="button"
               onClick={toggleMode}
-              className={`rounded font-medium text-indigo-600 hover:text-indigo-500 hover:underline ${focusRing}`}
+              className={`rounded font-medium text-clay-600 hover:text-clay-700 hover:underline ${focusRing}`}
             >
               {isSignUp ? 'Sign In' : 'Sign Up'}
             </button>
@@ -113,14 +113,14 @@ const Login: React.FC = () => {
               {errors.form && (
                 <div
                   role="alert"
-                  className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                  className="rounded-xl border border-berry-200 bg-berry-50 px-4 py-3 text-sm text-berry-700"
                 >
                   {errors.form}
                 </div>
               )}
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="email" className="block text-sm font-medium text-sand-700">
                   Email Address
                 </label>
                 <div className="mt-1">
@@ -143,20 +143,20 @@ const Login: React.FC = () => {
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'email-error' : undefined}
                     className={`${inputClasses} ${
-                      errors.email ? 'border-red-400' : 'border-slate-300'
+                      errors.email ? 'border-berry-400' : 'border-sand-300'
                     }`}
                     placeholder="you@example.com"
                   />
                 </div>
                 {errors.email && (
-                  <p id="email-error" className="mt-1.5 text-sm text-red-600">
+                  <p id="email-error" className="mt-1.5 text-sm text-berry-600">
                     {errors.email}
                   </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="password" className="block text-sm font-medium text-sand-700">
                   Password
                 </label>
                 <div className="mt-1">
@@ -178,18 +178,18 @@ const Login: React.FC = () => {
                       errors.password ? 'password-error' : isSignUp ? 'password-hint' : undefined
                     }
                     className={`${inputClasses} ${
-                      errors.password ? 'border-red-400' : 'border-slate-300'
+                      errors.password ? 'border-berry-400' : 'border-sand-300'
                     }`}
                     placeholder={isSignUp ? 'At least 6 characters' : 'Enter your password'}
                   />
                 </div>
                 {errors.password ? (
-                  <p id="password-error" className="mt-1.5 text-sm text-red-600">
+                  <p id="password-error" className="mt-1.5 text-sm text-berry-600">
                     {errors.password}
                   </p>
                 ) : (
                   isSignUp && (
-                    <p id="password-hint" className="mt-1.5 text-xs text-slate-500">
+                    <p id="password-hint" className="mt-1.5 text-xs text-sand-500">
                       Use at least 6 characters.
                     </p>
                   )
@@ -226,10 +226,10 @@ const Login: React.FC = () => {
             <div className="mt-6">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                  <div className="w-full border-t border-slate-200" />
+                  <div className="w-full border-t border-sand-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-slate-500">Or</span>
+                  <span className="px-2 bg-white text-sand-500">Or</span>
                 </div>
               </div>
 

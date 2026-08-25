@@ -6,8 +6,8 @@ import { button, focusRing } from './ui/buttonStyles.ts';
 
 const segment =
   `rounded-md px-2.5 py-1 text-xs font-medium transition-colors sm:px-3 sm:py-1.5 sm:text-sm ${focusRing}`;
-const segmentActive = 'bg-white text-slate-900 shadow-sm';
-const segmentInactive = 'text-slate-600 hover:text-slate-900';
+const segmentActive = 'bg-white text-sand-900 shadow-card';
+const segmentInactive = 'text-sand-600 hover:text-sand-900';
 
 const NavBar: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -19,19 +19,19 @@ const NavBar: React.FC = () => {
           here covers the whole app. Hidden until it takes focus. */}
       <a
         href="#main-content"
-        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-indigo-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white ${focusRing}`}
+        className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-clay-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white ${focusRing}`}
       >
         Skip to Main Content
       </a>
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-sand-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link
               to="/"
               className={`flex items-center space-x-2 rounded-lg hover:opacity-80 transition-opacity ${focusRing}`}
             >
-              <Camera className="h-7 w-7 text-indigo-600" aria-hidden="true" />
-              <span className="text-lg font-bold text-slate-900" translate="no">
+              <Camera className="h-7 w-7 text-clay-600" aria-hidden="true" />
+              <span className="font-display text-lg font-extrabold text-sand-900" translate="no">
                 MercuryMap
               </span>
             </Link>
@@ -43,7 +43,7 @@ const NavBar: React.FC = () => {
                 <div
                   role="group"
                   aria-label="Choose which map to view"
-                  className="flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5"
+                  className="flex items-center gap-0.5 rounded-lg bg-sand-100 p-0.5"
                 >
                   <Link
                     to="/public"
@@ -67,7 +67,7 @@ const NavBar: React.FC = () => {
                 // render public content today only because there's no user).
                 <Link
                   to="/public"
-                  className={`rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors ${focusRing}`}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium text-sand-600 hover:text-sand-900 hover:bg-sand-100 transition-colors ${focusRing}`}
                 >
                   Explore Map
                 </Link>
@@ -79,7 +79,7 @@ const NavBar: React.FC = () => {
               </Link>
               {user ? (
                 <>
-                  <span className="hidden md:inline text-sm text-slate-500 max-w-[160px] truncate">
+                  <span className="hidden md:inline text-sm text-sand-500 max-w-[160px] truncate">
                     {user.email}
                   </span>
                   <button onClick={signOut} className={button('ghost', 'sm')}>

@@ -60,17 +60,17 @@ const CommunityRecommendationsPanel: React.FC<CommunityRecommendationsPanelProps
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
         <h2
           id="community-recommendations-heading"
-          className="text-xl font-bold text-slate-900 flex items-center"
+          className="font-display text-xl font-bold text-sand-900 flex items-center"
         >
-          <Sparkles className="h-5 w-5 mr-2 text-indigo-600" aria-hidden="true" />
+          <Sparkles className="h-5 w-5 mr-2 text-sea-600" aria-hidden="true" />
           Popular Next Destinations
         </h2>
-        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-100">
+        <span className="inline-flex items-center rounded-full bg-sea-50 px-2.5 py-0.5 text-xs font-semibold text-sea-700 ring-1 ring-inset ring-sea-100">
           AI-generated
         </span>
       </div>
 
-      <p className="text-slate-700 mb-5 text-pretty">{data.intro}</p>
+      <p className="text-sand-700 mb-5 text-pretty">{data.intro}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {suggestions.map((suggestion) => (
@@ -97,7 +97,7 @@ const CommunityRecommendationsPanel: React.FC<CommunityRecommendationsPanelProps
         <div className="mt-5 text-center">
           <Link
             to="/public"
-            className={`inline-flex items-center gap-2 rounded-lg px-2 py-1 text-indigo-600 font-semibold hover:text-indigo-700 hover:underline transition-colors ${focusRing}`}
+            className={`inline-flex items-center gap-2 rounded-lg px-2 py-1 text-clay-600 font-semibold hover:text-clay-700 hover:underline transition-colors ${focusRing}`}
           >
             <span>Explore on the Map</span>
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

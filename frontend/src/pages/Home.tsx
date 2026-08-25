@@ -57,10 +57,16 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   };
 
   // Initial map state for reset functionality
+  // Both the private and the public map open here. 1.25 left the globe a
+  // small disc in a large black frame -- 216px of empty margin above and
+  // below it -- so the pins read as specks. 1.8 sizes the globe to just
+  // inside the frame (~36px margin at desktop), which is as close as this
+  // can go before the poles start getting cropped and whole longitudes drop
+  // out of view. Every continent still visible, but the earth fills the box.
   const initialViewState = {
     longitude: 0,
     latitude: 20,
-    zoom: 1.25
+    zoom: 1.8
   };
 
   // Mapbox viewport state
@@ -238,21 +244,21 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
   const visiblePhotos = showAllPhotos ? photos : photos.slice(0, PREVIEW_COUNT);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-sand-50">
       <NavBar />
 
       <main id="main-content">
         {loading ? (
-          <div className="flex items-center justify-center h-96 text-indigo-600">
+          <div className="flex items-center justify-center h-96 text-clay-600">
             <Spinner label="Loading photos…" className="h-12 w-12" />
           </div>
         ) : (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-slate-900 mb-3 text-balance">
+              <h1 className="font-display text-3xl font-bold text-sand-900 mb-3 text-balance">
                 <span translate="no">{heading}</span>
               </h1>
-              <p className="text-slate-600 max-w-2xl mx-auto text-pretty">{blurb}</p>
+              <p className="text-sand-600 max-w-2xl mx-auto text-pretty">{blurb}</p>
               {!user && !showPublicMap && (
                 <div className="mt-4">
                   <Link to="/login" className={button('primary', 'md')}>
@@ -266,7 +272,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
             {error && (
               <div
                 role="alert"
-                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
+                className="bg-berry-50 border border-berry-200 text-berry-700 px-4 py-3 rounded-xl text-sm"
               >
                 <strong>Error:</strong> {error}
               </div>
@@ -303,7 +309,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                     {...viewState}
                     onMove={evt => setViewState(evt.viewState)}
                     style={{ width: '100%', height: '100%' }}
-                    mapStyle="mapbox://styles/mapbox/streets-v11"
+                    mapStyle="mapbox://styles/mapbox/outdoors-v12"
                     mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
                   >
                     {Object.entries(groupedPhotos).map(([key, photoGroup]) => {
@@ -338,7 +344,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                             }}
                             className={`${
                               isMultiple ? 'w-8 h-8' : 'w-6 h-6'
-                            } bg-indigo-600 hover:bg-indigo-700 rounded-full border-2 border-white cursor-pointer flex items-center justify-center text-white text-xs font-bold tabular-nums shadow-card transition-colors ${focusRing}`}
+                            } bg-clay-600 hover:bg-clay-700 rounded-full border-2 border-white cursor-pointer flex items-center justify-center text-white text-xs font-bold tabular-nums shadow-card transition-colors ${focusRing}`}
                           >
                             {isMultiple ? photoGroup.length : ''}
                           </button>
@@ -352,18 +358,18 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                 {selectedLocation && (
                   <aside
                     aria-label="Photos at the selected location"
-                    className="sm:w-1/4 flex-1 sm:flex-none bg-white border-t sm:border-t-0 sm:border-l border-slate-200 overflow-y-auto overscroll-contain"
+                    className="sm:w-1/4 flex-1 sm:flex-none bg-white border-t sm:border-t-0 sm:border-l border-sand-200 overflow-y-auto overscroll-contain"
                   >
                     <div className="p-4">
                       <div className="flex justify-between items-start gap-2 mb-4">
-                        <h2 className="text-base font-semibold text-slate-900 min-w-0">
+                        <h2 className="text-base font-semibold text-sand-900 min-w-0">
                           <span className="tabular-nums">{selectedLocation.length}</span>{' '}
                           {selectedLocation.length === 1 ? 'Photo' : 'Photos'} at This Location
                         </h2>
                         <button
                           onClick={() => setSelectedLocation(null)}
                           aria-label="Close location panel"
-                          className={`flex-shrink-0 rounded p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors ${focusRing}`}
+                          className={`flex-shrink-0 rounded p-1 text-sand-400 hover:text-sand-600 hover:bg-sand-100 transition-colors ${focusRing}`}
                         >
                           <X className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -376,27 +382,27 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                             <button
                               type="button"
                               onClick={(e) => openModal(index, e.currentTarget)}
-                              className={`block w-full text-left bg-slate-50 rounded-xl p-3 hover:bg-slate-100 active:bg-slate-200 transition-colors border border-slate-100 ${focusRing}`}
+                              className={`block w-full text-left bg-sand-50 rounded-xl p-3 hover:bg-sand-100 active:bg-sand-200 transition-colors border border-sand-100 ${focusRing}`}
                             >
                               <PhotoImage
                                 src={photo.file_url}
                                 alt={photo.title || 'Travel photo'}
                                 width={400}
-                                className="w-full h-48 object-cover rounded-lg mb-3 bg-slate-200"
+                                className="w-full h-48 object-cover rounded-lg mb-3 bg-sand-200"
                               />
                               <div className="space-y-1 min-w-0">
                                 {photo.title && (
-                                  <h3 className="font-semibold text-sm text-slate-900 break-words">
+                                  <h3 className="font-semibold text-sm text-sand-900 break-words">
                                     {photo.title}
                                   </h3>
                                 )}
-                                <p className="text-xs text-slate-500 break-words">{photo.country}</p>
+                                <p className="text-xs text-sand-500 break-words">{photo.country}</p>
                                 {photo.description && (
-                                  <p className="text-xs text-slate-500 line-clamp-3 break-words">
+                                  <p className="text-xs text-sand-500 line-clamp-3 break-words">
                                     {photo.description}
                                   </p>
                                 )}
-                                <p className="text-xs text-slate-400 tabular-nums">
+                                <p className="text-xs text-sand-400 tabular-nums">
                                   {photoDate(photo)}
                                 </p>
                               </div>
@@ -431,7 +437,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
 
             {photos.length > 0 && (
               <Card className="p-6" aria-labelledby="recent-photos-heading">
-                <h2 id="recent-photos-heading" className="text-xl font-bold text-slate-900 mb-4">
+                <h2 id="recent-photos-heading" className="font-display text-xl font-bold text-sand-900 mb-4">
                   Recent Photos (<span className="tabular-nums">{photos.length}</span>)
                 </h2>
                 <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -446,25 +452,25 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                       <button
                         type="button"
                         onClick={(e) => handleRecentPhotoClick(photo, e.currentTarget)}
-                        className={`block w-full h-full text-left bg-slate-50 rounded-xl overflow-hidden hover:bg-slate-100 active:bg-slate-200 transition-colors border border-slate-100 ${focusRing}`}
+                        className={`block w-full h-full text-left bg-sand-50 rounded-xl overflow-hidden hover:bg-sand-100 active:bg-sand-200 transition-colors border border-sand-100 ${focusRing}`}
                       >
                         <PhotoImage
                           src={photo.file_url}
                           alt={photo.title || 'Travel photo'}
                           width={600}
                           priority={index < 3}
-                          className="w-full h-48 object-cover bg-slate-200"
+                          className="w-full h-48 object-cover bg-sand-200"
                         />
                         <div className="p-4 min-w-0">
-                          <h3 className="font-semibold text-slate-900 mb-1 break-words">
+                          <h3 className="font-semibold text-sand-900 mb-1 break-words">
                             {photo.title}
                           </h3>
-                          <div className="flex items-center text-sm text-slate-500 mb-2 min-w-0">
+                          <div className="flex items-center text-sm text-sand-500 mb-2 min-w-0">
                             <MapPin className="h-4 w-4 mr-1 flex-shrink-0" aria-hidden="true" />
                             <span className="truncate">{photo.country}</span>
                           </div>
                           {photo.description && (
-                            <p className="text-sm text-slate-500 line-clamp-2 break-words">
+                            <p className="text-sm text-sand-500 line-clamp-2 break-words">
                               {photo.description}
                             </p>
                           )}
@@ -485,9 +491,9 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
 
             {photos.length === 0 && (
               <Card className="text-center py-12 px-6">
-                <Camera className="h-16 w-16 text-slate-300 mx-auto mb-4" aria-hidden="true" />
-                <h2 className="text-lg font-medium text-slate-900 mb-2">No Photos Yet</h2>
-                <p className="text-slate-600 mb-4 text-pretty">
+                <Camera className="h-16 w-16 text-sand-300 mx-auto mb-4" aria-hidden="true" />
+                <h2 className="text-lg font-medium text-sand-900 mb-2">No Photos Yet</h2>
+                <p className="text-sand-600 mb-4 text-pretty">
                   Be the first to share your travel photos on{' '}
                   <span translate="no">MercuryMap</span>.
                 </p>
@@ -522,7 +528,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
             onClick={handleModalClose}
             aria-label="Close photo viewer"
             autoFocus
-            className={`absolute top-4 right-4 text-white hover:text-slate-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
+            className={`absolute top-4 right-4 text-white hover:text-sand-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
           >
             <X className="w-8 h-8" aria-hidden="true" />
           </button>
@@ -536,7 +542,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                   handlePrevPhoto();
                 }}
                 aria-label="Previous photo"
-                className={`absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
+                className={`absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-sand-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
               >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -548,7 +554,7 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                   handleNextPhoto();
                 }}
                 aria-label="Next photo"
-                className={`absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-slate-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
+                className={`absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-sand-300 transition-colors z-10 rounded-lg ${focusRing} focus-visible:ring-white focus-visible:ring-offset-black`}
               >
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -577,20 +583,20 @@ const Home: React.FC<HomeProps> = ({ showPublicMap }) => {
                       {selectedLocation[currentPhotoIndex].title}
                     </h2>
                   )}
-                  <p className="text-sm text-slate-300 mb-1 break-words">
+                  <p className="text-sm text-sand-300 mb-1 break-words">
                     {selectedLocation[currentPhotoIndex].country}
                   </p>
                   {selectedLocation[currentPhotoIndex].description && (
-                    <p className="text-sm text-slate-300 mb-1 line-clamp-3 break-words">
+                    <p className="text-sm text-sand-300 mb-1 line-clamp-3 break-words">
                       {selectedLocation[currentPhotoIndex].description}
                     </p>
                   )}
-                  <p className="text-xs text-slate-400 tabular-nums">
+                  <p className="text-xs text-sand-400 tabular-nums">
                     {photoDate(selectedLocation[currentPhotoIndex])}
                   </p>
                 </div>
                 {selectedLocation.length > 1 && (
-                  <div className="text-sm text-slate-300 tabular-nums flex-shrink-0">
+                  <div className="text-sm text-sand-300 tabular-nums flex-shrink-0">
                     {currentPhotoIndex + 1} / {selectedLocation.length}
                   </div>
                 )}

@@ -9,7 +9,7 @@ type CardProps = React.HTMLAttributes<HTMLDivElement> & {
 // (aria-labelledby, id) without a second wrapper element.
 const Card: React.FC<CardProps> = ({ className = '', children, ...rest }) => (
   <div
-    className={`bg-white rounded-2xl border border-slate-200 shadow-card ${className}`}
+    className={`bg-white rounded-2xl border border-sand-200 shadow-card ${className}`}
     {...rest}
   >
     {children}
