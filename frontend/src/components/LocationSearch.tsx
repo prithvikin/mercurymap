@@ -116,7 +116,6 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
   };
 
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -150,7 +149,6 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
   return (
     <div className="relative">
       <input
-        ref={inputRef}
         id={inputId}
         type="text"
         role="combobox"
