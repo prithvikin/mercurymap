@@ -25,11 +25,10 @@ const fieldClasses =
 
 const PhotoUpload: React.FC = () => {
   const { user } = useAuth();
+  // Only the two fields the form actually has inputs for. The country and
+  // coordinates come off `selectedLocation` at submit time, not from here.
   const [formData, setFormData] = useState({
     description: '',
-    country: '',
-    latitude: '',
-    longitude: '',
     taken_date: ''
   });
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -317,12 +316,6 @@ const PhotoUpload: React.FC = () => {
                 onLocationSelect={(location) => {
                   setSelectedLocation(location);
                   setErrors((prev) => ({ ...prev, location: undefined }));
-                  setFormData(prev => ({
-                    ...prev,
-                    country: location.country,
-                    latitude: location.lat.toString(),
-                    longitude: location.lng.toString()
-                  }));
                 }}
                 placeholder="Search for a city or country…"
               />
