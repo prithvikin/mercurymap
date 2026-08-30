@@ -19,9 +19,6 @@ interface SimilarPhoto {
   similarity: number;
 }
 
-const PHOTO_COLUMNS =
-  'id, title, description, country, latitude, longitude, taken_date, file_path, file_url, user_id, created_at, updated_at';
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
